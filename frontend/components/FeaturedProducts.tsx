@@ -10,7 +10,7 @@ export default function FeaturedProducts() {
   return (
     <section className="grid gap-4 md:grid-cols-3">
       {products.map((product) => (
-        <ProductCard key={product.name} {...product} />
+        <ProductCard key={product.name} name={product.name} price={product.price} />
       ))}
     </section>
   );
