@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
         [user.id]
       ),
       db.query(
-        `SELECT id, number, method, amount, status, created_at, reviewed_at
+        `SELECT id, number, method, amount, status, exchange_rate_toman, crypto_amount_cents, rate_source, rate_fetched_at, created_at, reviewed_at
            FROM web_deposits WHERE user_id = $1 ORDER BY created_at DESC LIMIT 20`,
         [user.id]
       ),
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       balance: Number(wallet.rows[0]?.balance || 0),
       transactions: transactions.rows.map(row => ({ ...row, amount: Number(row.amount), balance_before: Number(row.balance_before), balance_after: Number(row.balance_after) })),
-      deposits: deposits.rows.map(row => ({ ...row, id: Number(row.id), amount: Number(row.amount) })),
+      deposits: deposits.rows.map(row => ({ ...row, id: Number(row.id), amount: Number(row.amount), exchange_rate_toman: row.exchange_rate_toman ? Number(row.exchange_rate_toman) : null, crypto_amount_cents: row.crypto_amount_cents ? Number(row.crypto_amount_cents) : null })),
     });
   } catch (error) {
     console.error("web wallet lookup failed", error);
