@@ -12,6 +12,7 @@ export type WebSessionUser = {
   email: string;
   phone: string | null;
   balance: number;
+  createdAt: string;
 };
 
 export function normalizeEmail(value: unknown): string {
@@ -81,7 +82,7 @@ export async function getSessionUser(request: NextRequest): Promise<WebSessionUs
   await ensureWebSchema();
   const db = getWebPool();
   const result = await db.query(
-    `SELECT u.id, u.email, u.phone, w.balance
+    `SELECT u.id, u.email, u.phone, u.created_at, w.balance
        FROM web_sessions s
        JOIN web_users u ON u.id = s.user_id
        JOIN web_wallets w ON w.user_id = u.id
@@ -94,5 +95,5 @@ export async function getSessionUser(request: NextRequest): Promise<WebSessionUs
   if (!result.rowCount) return null;
   void db.query(`UPDATE web_sessions SET last_seen_at = NOW() WHERE token_hash = $1`, [sessionHash(token)]).catch(() => {});
   const row = result.rows[0];
-  return { id: Number(row.id), email: String(row.email), phone: row.phone ? String(row.phone) : null, balance: Number(row.balance || 0) };
+  return { id: Number(row.id), email: String(row.email), phone: row.phone ? String(row.phone) : null, balance: Number(row.balance || 0), createdAt: new Date(row.created_at).toISOString() };
 }
