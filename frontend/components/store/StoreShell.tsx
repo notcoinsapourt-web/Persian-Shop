@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Headphones, X } from "lucide-react";
+import { ArrowUp, Check, Headphones, ShieldCheck, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { StoreData, StoreProduct } from "../../lib/store-data";
 import type { WebSessionUser } from "../../lib/web-auth";
@@ -77,6 +77,21 @@ export default function StoreShell({ data }: { data: StoreData }) {
     document.body.classList.toggle("overlay-open", Boolean(anyOverlay));
     return () => document.body.classList.remove("overlay-open");
   }, [searchOpen, catalogOpen, selected, cartOpen, accountOpen, walletOpen, supportOpen]);
+
+  useEffect(() => {
+    const closeActiveOverlay = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (supportOpen) setSupportOpen(false);
+      else if (walletOpen) setWalletOpen(false);
+      else if (accountOpen) setAccountOpen(false);
+      else if (cartOpen) setCartOpen(false);
+      else if (selected) setSelected(null);
+      else if (catalogOpen) setCatalogOpen(false);
+      else if (searchOpen) setSearchOpen(false);
+    };
+    window.addEventListener("keydown", closeActiveOverlay);
+    return () => window.removeEventListener("keydown", closeActiveOverlay);
+  }, [supportOpen, walletOpen, accountOpen, cartOpen, selected, catalogOpen, searchOpen]);
 
   const cartCount = cart.reduce((sum, line) => sum + line.qty, 0);
   const recentProducts = useMemo(() => recentlyViewed.map(slug => products.find(product => product.slug === slug)).filter((product): product is StoreProduct => Boolean(product)).slice(0, 4), [recentlyViewed, products]);
@@ -189,13 +204,18 @@ export default function StoreShell({ data }: { data: StoreData }) {
       {!!recentProducts.length && <section className="page-container recently-viewed-section"><SectionHeading title="بازدیدهای اخیر" subtitle="محصولاتی که اخیراً بررسی کرده‌اید؛ فقط روی همین دستگاه ذخیره می‌شود."/><div className="product-grid recently-viewed-grid">{recentProducts.map(product => <ProductCard key={product.slug} product={product} favorite={favorites.includes(product.slug)} onFavorite={toggleFavorite} onOpen={openProduct}/>)}</div></section>}
 
       <footer className="site-footer">
+        <div className="page-container footer-trust-strip">
+          <span><ShieldCheck size={21}/><span><b>اطلاعات سفارش محفوظ</b><small>فقط اطلاعات لازم برای اجرای سرویس دریافت می‌شود</small></span></span>
+          <span><Check size={21}/><span><b>قیمت نهایی شفاف</b><small>مبلغ هر محصول پیش از سفارش مشخص است</small></span></span>
+          <span><Headphones size={21}/><span><b>پشتیبانی در دسترس</b><small>برای پرداخت و پیگیری سفارش همراهت هستیم</small></span></span>
+        </div>
         <div className="page-container footer-grid">
-          <div className="footer-brand"><div className="footer-brand-lockup"><span className="brand-logo-image"><img src="/api/brand/logo?brand=exact-user-v4" alt=""/></span><span><b>{settings.shopName}</b><small>Digital Marketplace</small></span></div><p>فروشگاه خدمات دیجیتال با دسته‌بندی شفاف، محصولات واقعی و مسیر خرید ساده و قابل پیگیری.</p></div>
+          <div className="footer-brand"><div className="footer-brand-lockup"><span className="brand-logo-image"><img src="/api/brand/logo?brand=exact-user-v4" alt={`لوگوی ${settings.shopName}`}/></span><span><b>{settings.shopName}</b><small>فروشگاه خدمات دیجیتال</small></span></div><p>خرید خدمات شبکه‌های اجتماعی، ابزارهای هوش مصنوعی و اشتراک‌های دیجیتال با قیمت مشخص و امکان پیگیری سفارش.</p><button className="footer-support-pill" onClick={openSupport}><Headphones size={17}/>پشتیبانی: {settings.supportUsername || "@Znoxe_shope"}</button></div>
           <div><b>فروشگاه</b><button onClick={() => openCatalog("all")}>همه محصولات</button><button onClick={() => setCartOpen(true)}>سبد خرید</button>{user && <button onClick={openWallet}>کیف پول</button>}</div>
           <div><b>حساب و پشتیبانی</b><button onClick={() => setAccountOpen(true)}>حساب کاربری</button><button onClick={openSupport}>پشتیبانی</button><button onClick={() => document.querySelector(".faq-section")?.scrollIntoView({ behavior: "smooth" })}>سؤالات متداول</button></div>
           <div><b>دسته‌بندی‌های محبوب</b>{categories.slice(0, 4).map(item => <button key={item.id} onClick={() => openCatalog(item.id)}>{item.name}</button>)}</div>
         </div>
-        <div className="page-container footer-bottom"><span>© 2026 Persian Shop</span><button onClick={home}>بازگشت به بالا</button></div>
+        <div className="page-container footer-bottom"><span>© 2026 Persian Shop — تمامی حقوق محفوظ است.</span><button onClick={home}>بازگشت به بالا<ArrowUp size={16}/></button></div>
       </footer>
 
       <CatalogPanel open={catalogOpen} categories={categories} products={products} category={category} query={query} sort={sort} favorites={favorites} onClose={() => setCatalogOpen(false)} onCategory={setCategory} onQuery={setQuery} onSort={setSort} onFavorite={toggleFavorite} onProduct={openProduct}/>

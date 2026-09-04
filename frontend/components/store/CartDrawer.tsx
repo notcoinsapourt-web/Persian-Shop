@@ -23,6 +23,7 @@ export default function CartDrawer({ open, cart, isLoggedIn, walletBalance, chec
   const count = cart.reduce((sum, line) => sum + line.qty, 0);
   const total = cart.reduce((sum, line) => sum + line.product.price * line.qty, 0);
   const hasBalance = walletBalance >= total;
+  const shortage = Math.max(0, total - walletBalance);
 
   return (
     <>
@@ -44,7 +45,7 @@ export default function CartDrawer({ open, cart, isLoggedIn, walletBalance, chec
         {!!cart.length && <footer className="cart-summary">
           <div className="cart-summary-row"><span>تعداد آیتم‌ها</span><b>{count}</b></div>
           <div className="cart-summary-row cart-total"><span>مبلغ کل</span><strong>{money(total)}</strong></div>
-          {isLoggedIn && <div className="cart-wallet-balance"><span>موجودی کیف پول</span><b className={hasBalance ? "is-enough" : "is-low"}>{money(walletBalance)}</b></div>}
+          {isLoggedIn && <><div className="cart-wallet-balance"><span>موجودی کیف پول</span><b className={hasBalance ? "is-enough" : "is-low"}>{money(walletBalance)}</b></div>{!hasBalance && <div className="cart-shortage"><span>کسری موجودی</span><strong>{money(shortage)}</strong></div>}</>}
 
           {!isLoggedIn ? <>
             <div className="cart-checkout-note">برای ثبت نهایی سفارش و پرداخت امن، ابتدا وارد حساب سایت شوید.</div>

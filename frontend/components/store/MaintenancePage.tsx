@@ -5,10 +5,10 @@ export default function MaintenancePage({ shopName, supportUsername }: { shopNam
   return (
     <main className="maintenance-page">
       <section className="maintenance-shell" aria-labelledby="maintenance-title">
-        <img className="maintenance-logo" src="/api/brand/logo?brand=original-v3" alt={`${shopName} logo`}/>
+        <img className="maintenance-logo" src="/api/brand/logo?brand=exact-user-v4" alt={`لوگوی ${shopName}`}/>
         <span className="maintenance-kicker"><Wrench size={16} strokeWidth={1.75}/> بروزرسانی فروشگاه</span>
-        <h1 className="maintenance-title" id="maintenance-title">{shopName} در حال بروزرسانی است</h1>
-        <p className="maintenance-message">سایت در حال تعمیر و بروزرسانی می‌باشد.{"\n"}لطفاً کمی بعد دوباره تلاش کنید.</p>
+        <h1 className="maintenance-title" id="maintenance-title">فروشگاه {shopName} در حال بروزرسانی است</h1>
+        <p className="maintenance-message">برای ارائه تجربه‌ای بهتر، فروشگاه موقتاً در حال بروزرسانی است.{"\n"}لطفاً کمی بعد دوباره تلاش کنید.</p>
         <div className="maintenance-activity" aria-hidden="true"><i/><i/><i/></div>
         <div className="maintenance-note"><ShieldCheck size={18} strokeWidth={1.75}/><span>حساب‌ها، سفارش‌ها و موجودی کاربران محفوظ هستند. این حالت فقط دسترسی عمومی سایت را موقتاً متوقف می‌کند و ربات فروشگاه فعال می‌ماند.</span></div>
         <div className="maintenance-actions">

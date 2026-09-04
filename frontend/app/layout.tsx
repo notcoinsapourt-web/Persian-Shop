@@ -5,13 +5,14 @@ import "./polish.css";
 import "./account.css";
 import "./riva-brand.css";
 import "./mobile-nav-fix.css";
+import "./commerce-v5.css";
 
 export const metadata: Metadata = {
   title: "Persian Shop | فروشگاه خدمات دیجیتال",
   description: "فروشگاه خدمات شبکه‌های اجتماعی، اشتراک‌های هوش مصنوعی و محصولات دیجیتال Persian Shop",
   icons: {
-    icon: "/api/brand/logo?brand=original-v3",
-    apple: "/api/brand/logo?brand=original-v3",
+    icon: "/api/brand/logo?brand=exact-user-v4",
+    apple: "/api/brand/logo?brand=exact-user-v4",
   },
 };
 

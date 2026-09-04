@@ -40,12 +40,12 @@ export default function Header({
   onOpenWallet: () => void;
   onSupport: () => void;
 }) {
-  const brandLogo = "/api/brand/logo?brand=original-v3";
+  const brandLogo = "/api/brand/logo?brand=exact-user-v4";
   return (
     <>
       <div className="announcement-bar">
         <div className="page-container announcement-inner">
-          <span>خرید سرویس‌های دیجیتال با قیمت و اطلاعات شفاف</span>
+          <span>قیمت شفاف، ثبت امن سفارش و پیگیری از حساب کاربری</span>
           {isLoggedIn ? <button onClick={onOpenWallet}>افزایش موجودی</button> : <button onClick={onOpenAccount}>ورود یا ثبت‌نام</button>}
         </div>
       </div>
@@ -76,7 +76,7 @@ export default function Header({
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
             </span>
-            <span className="brand-logo-copy"><b>{shopName}</b><small>Digital Marketplace</small></span>
+            <span className="brand-logo-copy"><b>{shopName}</b><small>فروشگاه خدمات دیجیتال</small></span>
           </button>
 
           <form className={`global-search ${searchFocused ? "is-focused" : ""}`} onSubmit={event => { event.preventDefault(); onSearchSubmit(); }}>
