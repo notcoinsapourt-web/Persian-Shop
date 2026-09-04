@@ -3,10 +3,9 @@ import fs from "node:fs";
 
 const baseUrl = process.env.QA_URL || "http://127.0.0.1:8090";
 const failures = [];
-const report = { baseUrl, mobile: {}, desktop: {}, consoleErrors: [] };
+const report = { baseUrl, mobile: {}, desktop: {}, auth: {}, consoleErrors: [] };
 
 const fail = (message) => failures.push(message);
-const px = (value) => Number(String(value || "0").replace("px", "")) || 0;
 
 async function expectVisible(locator, label) {
   if (!(await locator.count())) return fail(`${label}: missing`);
@@ -19,7 +18,7 @@ async function fontSize(page, selector) {
 
 const browser = await chromium.launch({ headless: true });
 try {
-  // MOBILE QA
+  // MOBILE GUEST QA
   {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
     page.on("pageerror", (error) => report.consoleErrors.push(`mobile pageerror: ${error.message}`));
@@ -55,6 +54,32 @@ try {
     if (fonts.search < 11) fail(`mobile search font too small: ${fonts.search}`);
     if (fonts.bottomNav < 8) fail(`mobile nav font too small: ${fonts.bottomNav}`);
 
+    // Guest wallet must not be exposed in primary UI.
+    const visibleWalletTabs = await page.locator(".mobile-bottom-nav button").filter({ hasText: "کیف پول" }).count();
+    report.mobile.guestWalletTabs = visibleWalletTabs;
+    if (visibleWalletTabs !== 0) fail("guest wallet tab should be hidden");
+    if (await page.locator(".wallet-promo").count()) fail("guest wallet promo should be hidden");
+
+    // Protected APIs must reject a guest session.
+    const meResponse = await page.request.get(`${baseUrl}/api/auth/me`);
+    const walletResponse = await page.request.get(`${baseUrl}/api/wallet`);
+    report.auth.guestMeStatus = meResponse.status();
+    report.auth.guestWalletStatus = walletResponse.status();
+    if (meResponse.status() !== 401) fail(`guest /api/auth/me expected 401, got ${meResponse.status()}`);
+    if (walletResponse.status() !== 401) fail(`guest /api/wallet expected 401, got ${walletResponse.status()}`);
+
+    // Registration UI: email + password + repeat + optional phone.
+    await page.locator(".mobile-bottom-nav button").filter({ hasText: "حساب من" }).click();
+    await expectVisible(page.locator(".account-panel"), "mobile account");
+    await page.getByRole("button", { name: "ثبت‌نام", exact: true }).click();
+    const authInputs = page.locator(".account-auth-form input");
+    report.auth.registrationInputs = await authInputs.count();
+    if ((await authInputs.count()) !== 4) fail("registration form should have 4 inputs");
+    await expectVisible(page.locator(".account-auth-form").getByText("شماره موبایل", { exact: false }), "optional phone label");
+    const phoneLabelText = await page.locator(".account-auth-form label").last().innerText();
+    if (!phoneLabelText.includes("اختیاری")) fail("phone field should be visibly optional");
+    await page.locator(".account-panel .sheet-close").click();
+
     // Category flow
     const firstCategory = page.locator(".mobile-category-scroll button").first();
     await firstCategory.click();
@@ -79,32 +104,9 @@ try {
     const cartItems = await page.locator(".cart-item").count();
     report.mobile.cartItems = cartItems;
     if (cartItems < 1) fail("cart item was not added");
-    await page.locator(".drawer-header .round-icon-button").click();
-
-    // Wallet flow
-    await page.locator(".mobile-bottom-nav button").filter({ hasText: "کیف پول" }).click();
-    await expectVisible(page.locator(".wallet-panel"), "mobile wallet");
-    await page.locator(".wallet-amount-field input").fill("500000");
-    await page.getByRole("button", { name: "ادامه و انتخاب روش پرداخت" }).click();
-    const methods = page.locator(".wallet-method-list > button");
-    const methodCount = await methods.count();
-    report.mobile.walletMethods = methodCount;
-    if (methodCount > 0) {
-      await methods.first().click();
-      await expectVisible(page.locator(".wallet-payment-card"), "wallet payment details");
-      await page.getByRole("button", { name: "پرداخت انجام شد؛ ثبت رسید" }).click();
-      await expectVisible(page.locator(".receipt-upload-box"), "wallet receipt step");
-    } else {
-      await expectVisible(page.locator(".wallet-empty-method"), "wallet empty payment state");
-    }
-    await page.locator(".wallet-panel .sheet-close").click();
-
-    // Account honesty / no fake auth
-    await page.locator(".mobile-bottom-nav button").filter({ hasText: "حساب من" }).click();
-    await expectVisible(page.locator(".account-panel"), "mobile account");
-    const otpDisabled = await page.locator(".account-login-button").isDisabled();
-    report.mobile.otpDisabled = otpDisabled;
-    if (!otpDisabled) fail("OTP action should stay disabled until backend exists");
+    await expectVisible(page.getByRole("button", { name: "ورود یا ثبت‌نام" }), "guest checkout login gate");
+    await page.getByRole("button", { name: "ورود یا ثبت‌نام" }).click();
+    await expectVisible(page.locator(".account-panel"), "account opened from checkout gate");
     await page.locator(".account-panel .sheet-close").click();
 
     await page.screenshot({ path: "/tmp/persian-shop-v4-mobile.png", fullPage: true });
@@ -112,7 +114,7 @@ try {
     await page.close();
   }
 
-  // DESKTOP QA
+  // DESKTOP GUEST QA
   {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
     page.on("pageerror", (error) => report.consoleErrors.push(`desktop pageerror: ${error.message}`));
@@ -128,6 +130,7 @@ try {
     await expectVisible(page.locator(".global-search"), "desktop search");
     await expectVisible(page.locator(".hero-copy h1"), "desktop hero");
     if (await page.locator(".mobile-bottom-nav").isVisible()) fail("mobile bottom nav visible on desktop");
+    if (await page.locator(".desktop-nav-row .nav-utility").filter({ hasText: "کیف پول" }).count()) fail("desktop guest wallet navigation should be hidden");
 
     const dimensions = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth }));
     report.desktop.dimensions = dimensions;
@@ -153,9 +156,15 @@ try {
     const searchMatches = (await page.locator(".search-product-results button").count()) + (await page.locator(".search-category-results button").count());
     report.desktop.searchMatches = searchMatches;
     if (searchMatches < 1) fail("desktop search returned no matches for تلگرام");
-    await page.keyboard.press("Escape").catch(() => {});
-    // backdrop click if still open
     if (await page.locator(".search-overlay-backdrop").count()) await page.locator(".search-overlay-backdrop").click({ position: { x: 4, y: 4 } }).catch(() => {});
+
+    // Desktop account auth form must also render cleanly.
+    await page.locator(".header-account").click();
+    await expectVisible(page.locator(".account-panel"), "desktop account panel");
+    await page.getByRole("button", { name: "ثبت‌نام", exact: true }).click();
+    const panelOverflow = await page.locator(".account-panel").evaluate((el) => el.scrollWidth > el.clientWidth + 2);
+    if (panelOverflow) fail("desktop account panel horizontal overflow");
+    await page.locator(".account-panel .sheet-close").click();
 
     await page.screenshot({ path: "/tmp/persian-shop-v4-desktop.png", fullPage: true });
     report.desktop.screenshotBytes = fs.statSync("/tmp/persian-shop-v4-desktop.png").size;
@@ -165,10 +174,7 @@ try {
   await browser.close();
 }
 
-if (report.consoleErrors.length) {
-  // Browser/runtime errors are critical unless explicitly whitelisted above.
-  failures.push(...report.consoleErrors.slice(0, 10));
-}
+if (report.consoleErrors.length) failures.push(...report.consoleErrors.slice(0, 10));
 
 console.log("PERSIAN_SHOP_V4_QA_REPORT=" + JSON.stringify(report));
 if (failures.length) {
