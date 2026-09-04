@@ -1,6 +1,6 @@
 {
   "name": "persian-shop-frontend",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,16 +8,17 @@
     "start": "next start"
   },
   "dependencies": {
+    "lucide-react": "latest",
     "next": "latest",
+    "pg": "latest",
     "react": "latest",
-    "react-dom": "latest",
-    "pg": "latest"
+    "react-dom": "latest"
   },
   "devDependencies": {
-    "typescript": "latest",
-    "tailwindcss": "latest",
     "@types/node": "latest",
+    "@types/pg": "latest",
     "@types/react": "latest",
-    "@types/pg": "latest"
+    "tailwindcss": "latest",
+    "typescript": "latest"
   }
 }
