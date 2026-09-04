@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, Headphones, LogOut, Mail, Package, Phone, ShieldCheck, ShoppingCart, UserRound, WalletCards, X } from "lucide-react";
+import { CalendarDays, ChevronLeft, CircleCheck, Clock3, Heart, Headphones, LogOut, Mail, Package, Phone, ShieldCheck, ShoppingCart, UserRound, WalletCards, X } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import type { WebSessionUser } from "../../lib/web-auth";
 import { HelpHint } from "./shared";
@@ -48,6 +48,7 @@ export default function AccountPanel({ open, user, authLoading, cartCount, favor
   const [error, setError] = useState("");
   const [orders, setOrders] = useState<WebOrder[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [logoutConfirm, setLogoutConfirm] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -101,29 +102,35 @@ export default function AccountPanel({ open, user, authLoading, cartCount, favor
         <div className="sheet-handle"/>
         <button className="sheet-close" onClick={onClose} aria-label="بستن"><X size={22}/></button>
 
-        <div className="account-hero-card">
-          <span className="account-avatar"><UserRound size={30}/></span>
+        <div className={`account-hero-card ${user ? "account-hero-logged" : ""}`}>
+          {user ? <img className="account-brand-logo" src="/api/brand/logo?brand=exact-user-v4" alt="Persian Shop"/> : <span className="account-avatar"><UserRound size={30}/></span>}
           <div>
             <small>Persian Shop Account</small>
-            <h2>{user ? "حساب کاربری" : "ورود یا ساخت حساب"}</h2>
-            <p>{user ? "سفارش‌ها، کیف پول و وضعیت پرداخت‌های سایت از همین حساب مدیریت می‌شوند." : "برای ثبت سفارش و استفاده از کیف پول، یک حساب با ایمیل و رمز عبور بسازید."}</p>
+            <h2>{user ? user.email.split("@")[0] : "ورود یا ساخت حساب"}</h2>
+            <p>{user ? "داشبورد سفارش‌ها، پرداخت‌ها و کیف پول شما" : "برای ثبت سفارش و استفاده از کیف پول، یک حساب امن بسازید."}</p>
           </div>
+          {user && <span className="account-verified"><ShieldCheck size={15}/> حساب فعال</span>}
         </div>
 
         {authLoading ? (
           <div className="account-loading">در حال بررسی وضعیت ورود…</div>
         ) : user ? (
           <>
-            <div className="account-profile-card">
+            <div className="account-profile-card account-profile-premium">
               <div><Mail size={18}/><span><small>ایمیل</small><b dir="ltr">{user.email}</b></span></div>
               <div><Phone size={18}/><span><small>شماره تماس</small><b dir="ltr">{user.phone || "ثبت نشده"}</b></span></div>
-              <button onClick={logout} disabled={busy}><LogOut size={17}/>خروج از حساب</button>
+              <div><CalendarDays size={18}/><span><small>تاریخ عضویت</small><b>{user.createdAt ? new Intl.DateTimeFormat("fa-IR",{dateStyle:"medium"}).format(new Date(user.createdAt)) : "—"}</b></span></div>
             </div>
 
-            <div className="account-stats-grid">
-              <button onClick={onWallet}><small>موجودی کیف پول</small><strong>{money(user.balance)}</strong><span>مدیریت کیف پول</span></button>
-              <button onClick={onCart}><small>سبد خرید</small><strong>{cartCount}</strong><span>آیتم آماده خرید</span></button>
-              <div><small>علاقه‌مندی‌ها</small><strong>{favoriteCount}</strong><span>ذخیره روی این دستگاه</span></div>
+            <button className="account-wallet-card" onClick={onWallet}>
+              <span><WalletCards size={24}/><small>موجودی قابل استفاده</small></span><strong>{money(user.balance)}</strong><i>افزایش موجودی <ChevronLeft size={17}/></i>
+            </button>
+
+            <div className="account-stats-grid premium-stats">
+              <div><Package size={20}/><small>کل سفارش‌ها</small><strong>{orders.length.toLocaleString("fa-IR")}</strong></div>
+              <div><Clock3 size={20}/><small>در حال انجام</small><strong>{orders.filter(x => ["pending","approved","processing"].includes(x.status)).length.toLocaleString("fa-IR")}</strong></div>
+              <div><CircleCheck size={20}/><small>تکمیل‌شده</small><strong>{orders.filter(x => x.status === "completed").length.toLocaleString("fa-IR")}</strong></div>
+              <div><Heart size={20}/><small>علاقه‌مندی‌ها</small><strong>{favoriteCount.toLocaleString("fa-IR")}</strong></div>
             </div>
 
             <div className="account-section-title"><b>سفارش‌های سایت</b><small>وضعیت‌ها مستقیماً توسط مدیریت ربات به‌روزرسانی می‌شوند.</small></div>
@@ -134,8 +141,15 @@ export default function AccountPanel({ open, user, authLoading, cartCount, favor
                   <div className="web-order-meta"><span>{order.quantity.toLocaleString("fa-IR")} عدد</span><span className={`web-order-status status-${order.status}`}>{statusFa[order.status] || order.status}</span></div>
                   {order.admin_note && <p>{order.admin_note}</p>}
                 </article>
-              )) : <div className="account-empty-orders"><Package size={24}/><span><b>هنوز سفارشی ثبت نشده</b><small>بعد از پرداخت از کیف پول، سفارش‌ها اینجا نمایش داده می‌شوند.</small></span></div>}
+              )) : <div className="account-empty-orders"><Package size={26}/><span><b>هنوز سفارشی ثبت نشده</b><small>محصول دلخواهتان را انتخاب کنید؛ سفارش‌ها اینجا قابل پیگیری هستند.</small></span><button onClick={onCatalog}>مشاهده محصولات</button></div>}
             </div>
+
+            <div className="account-menu-premium">
+              <button onClick={onCart}><ShoppingCart size={20}/><span><b>سبد خرید</b><small>{cartCount.toLocaleString("fa-IR")} آیتم آماده خرید</small></span><ChevronLeft size={18}/></button>
+              <button onClick={onSupport}><Headphones size={20}/><span><b>پشتیبانی سفارش</b><small>ارتباط مستقیم با مدیریت</small></span><ChevronLeft size={18}/></button>
+              <button className="account-logout-row" onClick={() => setLogoutConfirm(true)}><LogOut size={20}/><span><b>خروج از حساب</b><small>پایان نشست امن در این دستگاه</small></span><ChevronLeft size={18}/></button>
+            </div>
+            {logoutConfirm && <div className="logout-confirm"><div><LogOut size={24}/><span><b>از حساب خارج می‌شوید؟</b><small>سبد خرید و علاقه‌مندی‌های دستگاه حذف نمی‌شوند.</small></span></div><footer><button onClick={() => setLogoutConfirm(false)}>انصراف</button><button onClick={logout} disabled={busy}>{busy ? "در حال خروج…" : "خروج از حساب"}</button></footer></div>}
           </>
         ) : (
           <>
