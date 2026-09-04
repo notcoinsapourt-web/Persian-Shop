@@ -1,153 +1,45 @@
 "use client";
-
-import { Check, Copy, CreditCard, FileImage, Info, ShieldCheck, Upload, WalletCards, X } from "lucide-react";
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { ArrowDownLeft,ArrowUpRight,Check,Clock3,Copy,CreditCard,FileImage,Info,RefreshCw,ShieldCheck,Trash2,Upload,WalletCards,X } from "lucide-react";
+import { ChangeEvent,useEffect,useMemo,useState } from "react";
 import type { StoreSettings } from "../../lib/store-data";
 import type { WalletMethod } from "./types";
-import { HelpHint } from "./shared";
-import { cardFormat, cleanTelegramText, money, parseAmount } from "./utils";
+import { cardFormat,cleanTelegramText,money,parseAmount } from "./utils";
 
-export default function WalletPanel({ open, balance, settings, onClose, onNotify, onSubmitted }: {
-  open: boolean;
-  balance: number;
-  settings: StoreSettings;
-  onClose: () => void;
-  onNotify: (message: string) => void;
-  onSubmitted: () => void;
-}) {
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
-  const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState<WalletMethod>("card");
-  const [receiptFile, setReceiptFile] = useState<File | null>(null);
-  const [transactionHash, setTransactionHash] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState("");
-  const [submittedNumber, setSubmittedNumber] = useState("");
-  const numericAmount = useMemo(() => parseAmount(amount), [amount]);
+type Rate={rateToman:number;source:string;fetchedAt:string;expiresAt:string;stale:boolean};
+type Deposit={id:number;number:string;method:WalletMethod;amount:number;status:string;created_at:string};
+type Transaction={transaction_type:string;amount:number;description:string;created_at:string};
+type WalletData={balance:number;deposits:Deposit[];transactions:Transaction[]};
+const statusFa:Record<string,string>={pending:"در انتظار تأیید",approved:"تأییدشده",rejected:"ردشده",expired:"منقضی‌شده"};
+const date=(v:string)=>new Intl.DateTimeFormat("fa-IR",{dateStyle:"medium",timeStyle:"short"}).format(new Date(v));
+const amountInput=(v:string)=>{const n=parseAmount(v);return n?new Intl.NumberFormat("fa-IR").format(n):""};
 
-  useEffect(() => {
-    if (open) {
-      setStep(1);
-      setAmount("");
-      setReceiptFile(null);
-      setTransactionHash("");
-      setSubmitError("");
-      setSubmittedNumber("");
-    }
-  }, [open]);
-
-  if (!open) return null;
-
-  const copy = async (value: string, label: string) => {
-    if (!value) return;
-    try {
-      await navigator.clipboard.writeText(value);
-      onNotify(`${label} کپی شد`);
-    } catch {
-      onNotify("کپی خودکار در این مرورگر در دسترس نیست");
-    }
-  };
-
-  const chooseMethod = (next: WalletMethod) => {
-    setMethod(next);
-    setStep(3);
-  };
-
-  const onReceipt = (event: ChangeEvent<HTMLInputElement>) => {
-    setReceiptFile(event.target.files?.[0] || null);
-    setSubmitError("");
-  };
-
-  const submitReceipt = async () => {
-    if (!receiptFile || numericAmount < 10000) return;
-    setSubmitting(true);
-    setSubmitError("");
-    try {
-      const form = new FormData();
-      form.append("amount", String(numericAmount));
-      form.append("method", method);
-      form.append("receipt", receiptFile);
-      if (transactionHash.trim()) form.append("transactionHash", transactionHash.trim());
-      const response = await fetch("/api/wallet/deposit", { method: "POST", body: form });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "ثبت رسید انجام نشد.");
-      setSubmittedNumber(data.deposit.number);
-      onSubmitted();
-    } catch (reason) {
-      setSubmitError(reason instanceof Error ? reason.message : "ثبت رسید انجام نشد.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="modal-backdrop" onMouseDown={onClose}>
-      <section className="wallet-panel" role="dialog" aria-modal="true" aria-label="کیف پول" onMouseDown={event => event.stopPropagation()}>
-        <div className="sheet-handle"/>
-        <button className="sheet-close" onClick={onClose} aria-label="بستن"><X size={22}/></button>
-
-        <div className="wallet-overview-card">
-          <div className="wallet-overview-brand"><span className="wallet-overview-icon"><WalletCards size={28}/></span><span><small>Persian Shop Wallet</small><b>کیف پول</b></span></div>
-          <div className="wallet-balance-placeholder"><small>موجودی قابل استفاده</small><strong>{money(balance)}</strong><span>متصل به حساب سایت</span></div>
-          <div className="wallet-overview-status"><ShieldCheck size={17}/><span>افزایش موجودی فقط پس از تأیید رسید توسط مدیریت ربات انجام می‌شود.</span></div>
-        </div>
-
-        <div className="wallet-stepper">
-          {[[1, "مبلغ"], [2, "روش پرداخت"], [3, "اطلاعات پرداخت"], [4, "رسید"]].map(([index, label]) => {
-            const value = Number(index);
-            return <span key={value} className={step >= value ? "is-active" : ""}><i>{step > value ? <Check size={14}/> : value}</i><b>{label}</b></span>;
-          })}
-        </div>
-
-        {step === 1 && <div className="wallet-stage">
-          <div className="wallet-stage-head"><span><b>مبلغ افزایش موجودی</b><small>مبلغ موردنظر را به تومان وارد کنید.</small></span></div>
-          <label className="wallet-amount-field"><input inputMode="numeric" value={amount} onChange={event => setAmount(event.target.value)} placeholder="مثلاً 500000"/><span>تومان</span></label>
-          <div className="wallet-quick-amounts">{[100000, 250000, 500000, 1000000].map(value => <button key={value} onClick={() => setAmount(String(value))}>{new Intl.NumberFormat("fa-IR").format(value)}</button>)}</div>
-          <HelpHint>حداقل مبلغ شارژ ۱۰٬۰۰۰ تومان است و تا قبل از تأیید مدیریت، موجودی تغییر نمی‌کند.</HelpHint>
-          <button className="button button-primary wallet-main-button" disabled={numericAmount < 10000} onClick={() => setStep(2)}>ادامه و انتخاب روش پرداخت</button>
-        </div>}
-
-        {step === 2 && <div className="wallet-stage">
-          <div className="wallet-amount-summary"><span><small>مبلغ شارژ</small><b>{money(numericAmount)}</b></span><button onClick={() => setStep(1)}>ویرایش مبلغ</button></div>
-          <div className="wallet-method-list">
-            {settings.cardEnabled && <button onClick={() => chooseMethod("card")}><span className="wallet-method-icon"><CreditCard size={23}/></span><span><b>کارت‌به‌کارت</b><small>پرداخت ریالی و ارسال تصویر رسید</small></span><strong>انتخاب</strong></button>}
-            {settings.cryptoEnabled && <button onClick={() => chooseMethod("crypto")}><span className="wallet-method-icon crypto">₮</span><span><b>USDT</b><small>شبکه {settings.cryptoNetwork || "BEP20"}</small></span><strong>انتخاب</strong></button>}
-          </div>
-          {!settings.cardEnabled && !settings.cryptoEnabled && <div className="wallet-empty-method"><Info size={24}/><b>روش پرداخت فعالی ثبت نشده است.</b></div>}
-        </div>}
-
-        {step === 3 && <div className="wallet-stage">
-          <div className="wallet-payment-head"><span><small>مبلغ قابل پرداخت</small><b>{money(numericAmount)}</b></span><button onClick={() => setStep(2)}>تغییر روش</button></div>
-          {method === "card" ? <div className="wallet-payment-card">
-            <div className="wallet-payment-title"><span className="wallet-method-icon"><CreditCard size={23}/></span><span><b>پرداخت کارت‌به‌کارت</b><small>مبلغ بالا را دقیقاً واریز کنید.</small></span></div>
-            <div className="wallet-copy-row"><span><small>شماره کارت</small><b dir="ltr">{cardFormat(settings.cardNumber) || "در مدیریت ثبت نشده"}</b></span><button onClick={() => copy(settings.cardNumber.replace(/\D/g, ""), "شماره کارت")} aria-label="کپی شماره کارت"><Copy size={18}/></button></div>
-            <div className="wallet-info-row"><small>به نام</small><b>{settings.cardHolder || "—"}</b></div>
-            {cleanTelegramText(settings.cardText) && <p className="wallet-payment-description">{cleanTelegramText(settings.cardText)}</p>}
-          </div> : <div className="wallet-payment-card">
-            <div className="wallet-payment-title"><span className="wallet-method-icon crypto">₮</span><span><b>پرداخت USDT</b><small>فقط روی شبکه اعلام‌شده انتقال دهید.</small></span></div>
-            <div className="wallet-info-row"><small>شبکه</small><b>{settings.cryptoNetwork || "BEP20"}</b></div>
-            <div className="wallet-copy-row"><span><small>آدرس کیف پول</small><b className="wallet-address" dir="ltr">{settings.cryptoAddress || "در مدیریت ثبت نشده"}</b></span><button onClick={() => copy(settings.cryptoAddress, "آدرس کیف پول")} aria-label="کپی آدرس"><Copy size={18}/></button></div>
-            <label className="wallet-hash-field"><span>هش تراکنش <small>اختیاری</small></span><input dir="ltr" value={transactionHash} onChange={event => setTransactionHash(event.target.value)} placeholder="Transaction hash"/></label>
-            <div className="wallet-rate-note"><Info size={17}/><span>معادل لحظه‌ای USDT تا زمان اتصال منبع نرخ مطمئن نمایش داده نمی‌شود.</span></div>
-            {cleanTelegramText(settings.cryptoText) && <p className="wallet-payment-description">{cleanTelegramText(settings.cryptoText)}</p>}
-          </div>}
-          <button className="button button-primary wallet-main-button" onClick={() => setStep(4)}>پرداخت انجام شد؛ ثبت رسید</button>
-        </div>}
-
-        {step === 4 && <div className="wallet-stage">
-          {submittedNumber ? <div className="wallet-submit-success"><span><Check size={26}/></span><h3>رسید ثبت شد</h3><p>درخواست <b dir="ltr">{submittedNumber}</b> وارد صف بررسی مدیریت شده است. پس از تأیید، موجودی حساب به‌صورت خودکار افزایش پیدا می‌کند.</p><button className="button button-primary" onClick={onClose}>بستن</button></div> : <>
-            <div className="wallet-receipt-header"><span className="wallet-receipt-icon"><FileImage size={26}/></span><div><b>رسید پرداخت</b><p>تصویر رسید را انتخاب کنید؛ فایل مستقیماً برای مدیریت سایت ثبت می‌شود.</p></div></div>
-            <label className={`receipt-upload-box ${receiptFile ? "has-file" : ""}`}>
-              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onReceipt}/>
-              <Upload size={25}/>
-              {receiptFile ? <span><b>{receiptFile.name}</b><small>{(receiptFile.size / 1024 / 1024).toFixed(2)} MB</small></span> : <span><b>انتخاب تصویر رسید</b><small>JPG، PNG یا WEBP • حداکثر ۵MB</small></span>}
-            </label>
-            <div className="wallet-final-summary"><span><small>مبلغ</small><b>{money(numericAmount)}</b></span><span><small>روش</small><b>{method === "card" ? "کارت‌به‌کارت" : `USDT • ${settings.cryptoNetwork || "BEP20"}`}</b></span></div>
-            {submitError && <div className="wallet-submit-error">{submitError}</div>}
-            <button className="button button-dark wallet-main-button" disabled={!receiptFile || submitting} onClick={submitReceipt}>{submitting ? "در حال ثبت رسید…" : "ثبت رسید برای بررسی مدیریت"}</button>
-          </>}
-        </div>}
-      </section>
-    </div>
-  );
+export default function WalletPanel({open,balance,settings,onClose,onNotify,onSubmitted}:{open:boolean;balance:number;settings:StoreSettings;onClose:()=>void;onNotify:(m:string)=>void;onSubmitted:()=>void}){
+ const[step,setStep]=useState<1|2|3|4>(1),[view,setView]=useState<"charge"|"history">("charge");
+ const[amount,setAmount]=useState(""),[method,setMethod]=useState<WalletMethod>("card"),[receipt,setReceipt]=useState<File|null>(null),[preview,setPreview]=useState(""),[hash,setHash]=useState("");
+ const[busy,setBusy]=useState(false),[error,setError]=useState(""),[number,setNumber]=useState("");
+ const[wallet,setWallet]=useState<WalletData>({balance,deposits:[],transactions:[]}),[walletLoading,setWalletLoading]=useState(false);
+ const[rate,setRate]=useState<Rate|null>(null),[rateLoading,setRateLoading]=useState(false),[rateError,setRateError]=useState("");
+ const numeric=useMemo(()=>parseAmount(amount),[amount]);
+ const cents=rate&&numeric?Math.ceil(numeric*100/rate.rateToman):0,usdt=(cents/100).toFixed(2);
+ const loadWallet=async()=>{setWalletLoading(true);try{const r=await fetch("/api/wallet",{cache:"no-store"}),d=await r.json();if(!r.ok)throw Error(d.error);setWallet(d)}catch{setWallet(x=>({...x,balance}))}finally{setWalletLoading(false)}};
+ const loadRate=async(force=false)=>{setRateLoading(true);setRateError("");try{const r=await fetch(`/api/wallet/rate${force?"?refresh=1":""}`,{cache:"no-store"}),d=await r.json();if(!r.ok)throw Error(d.error||"نرخ دریافت نشد.");setRate(d)}catch(e){setRate(null);setRateError(e instanceof Error?e.message:"نرخ معتبر در دسترس نیست.")}finally{setRateLoading(false)}};
+ useEffect(()=>{if(open){setStep(1);setView("charge");setAmount("");setReceipt(null);setPreview("");setHash("");setError("");setNumber("");void loadWallet()}},[open]);
+ useEffect(()=>()=>{if(preview)URL.revokeObjectURL(preview)},[preview]);
+ if(!open)return null;
+ const copy=async(v:string,l:string)=>{if(!v)return;try{await navigator.clipboard.writeText(v);onNotify(`${l} کپی شد`)}catch{onNotify("کپی خودکار در دسترس نیست")}};
+ const pick=(next:WalletMethod)=>{setMethod(next);setStep(3);if(next==="crypto")void loadRate()};
+ const file=(e:ChangeEvent<HTMLInputElement>)=>{const f=e.target.files?.[0]||null;if(f&&f.size>5*1024*1024){setError("حجم تصویر باید کمتر از ۵ مگابایت باشد.");return}if(preview)URL.revokeObjectURL(preview);setReceipt(f);setPreview(f?URL.createObjectURL(f):"");setError("")};
+ const submit=async()=>{if(!receipt||numeric<10000||(method==="crypto"&&!rate))return;setBusy(true);setError("");try{const f=new FormData();f.append("amount",String(numeric));f.append("method",method);f.append("receipt",receipt);if(hash.trim())f.append("transactionHash",hash.trim());const r=await fetch("/api/wallet/deposit",{method:"POST",body:f}),d=await r.json();if(!r.ok)throw Error(d.error||"ثبت رسید انجام نشد.");setNumber(d.deposit.number);await loadWallet();onSubmitted()}catch(e){setError(e instanceof Error?e.message:"ثبت رسید انجام نشد.")}finally{setBusy(false)}};
+ const items=[...wallet.deposits.map(x=>({key:`d-${x.id}`,title:x.method==="crypto"?"افزایش موجودی با USDT":"افزایش موجودی کارت‌به‌کارت",amount:x.amount,positive:true,status:x.status,at:x.created_at,no:x.number})),...wallet.transactions.map((x,i)=>({key:`t-${i}`,title:x.description,amount:x.amount,positive:x.transaction_type!=="purchase",status:"approved",at:x.created_at,no:""}))].sort((a,b)=>+new Date(b.at)-+new Date(a.at));
+ return <div className="modal-backdrop" onMouseDown={onClose}><section className="wallet-panel wallet-panel-premium" role="dialog" aria-modal="true" aria-label="کیف پول" onMouseDown={e=>e.stopPropagation()}>
+  <div className="sheet-handle"/><button className="sheet-close" onClick={onClose} aria-label="بستن"><X size={22}/></button>
+  <div className="wallet-premium-hero"><div className="wallet-brand-line"><img src="/api/brand/logo?brand=exact-user-v4" alt="Persian Shop"/><span><small>Persian Shop Wallet</small><b>کیف پول هوشمند</b></span></div><div className="wallet-balance-line"><span><small>موجودی قابل استفاده</small><strong>{money(wallet.balance??balance)}</strong></span><ShieldCheck size={28}/></div><div className="wallet-hero-actions"><button className={view==="charge"?"active":""} onClick={()=>setView("charge")}><ArrowDownLeft size={17}/>افزایش موجودی</button><button className={view==="history"?"active":""} onClick={()=>setView("history")}><Clock3 size={17}/>تراکنش‌ها</button></div></div>
+  {view==="history"?<div className="wallet-history"><div className="wallet-section-heading"><span><b>گردش حساب</b><small>آخرین واریزها و خریدهای حساب شما</small></span><button onClick={loadWallet} disabled={walletLoading}><RefreshCw size={17}/></button></div>{walletLoading?<div className="wallet-skeleton">{[1,2,3].map(i=><i key={i}/>)}</div>:items.length?<div className="wallet-transaction-list">{items.map(x=><article key={x.key}><span className={`transaction-icon ${x.positive?"positive":"negative"}`}>{x.positive?<ArrowDownLeft size={19}/>:<ArrowUpRight size={19}/>}</span><span className="transaction-copy"><b>{x.title}</b><small>{date(x.at)}{x.no?` • ${x.no}`:""}</small></span><span className="transaction-value"><strong className={x.positive?"positive":"negative"}>{x.positive?"+":"−"}{money(x.amount)}</strong><i className={`deposit-status status-${x.status}`}>{statusFa[x.status]||"ثبت‌شده"}</i></span></article>)}</div>:<div className="wallet-empty-history"><WalletCards size={30}/><b>هنوز تراکنشی وجود ندارد</b><small>اولین افزایش موجودی شما اینجا نمایش داده می‌شود.</small><button className="button button-primary" onClick={()=>setView("charge")}>افزایش موجودی</button></div>}</div>:<>
+   <div className="wallet-stepper premium-stepper">{[[1,"مبلغ"],[2,"روش"],[3,"پرداخت"],[4,"رسید"]].map(([i,l])=>{const n=Number(i);return <span key={n} className={step>=n?"is-active":""}><i>{step>n?<Check size={14}/>:n}</i><b>{l}</b></span>})}</div>
+   {step===1&&<div className="wallet-stage"><div className="wallet-stage-head"><span><b>چه مبلغی به کیف پول اضافه شود؟</b><small>مبلغ را به تومان وارد کنید.</small></span></div><label className="wallet-amount-field premium-amount"><input inputMode="numeric" value={amount} onChange={e=>setAmount(amountInput(e.target.value))} placeholder="۰"/><span>تومان</span></label><div className="wallet-quick-amounts">{[100000,250000,500000,1000000].map(v=><button key={v} onClick={()=>setAmount(amountInput(String(v)))}>{new Intl.NumberFormat("fa-IR").format(v)}</button>)}</div><div className="wallet-safe-note"><ShieldCheck size={19}/><span><b>پرداخت امن و قابل پیگیری</b><small>حداقل مبلغ ۱۰٬۰۰۰ تومان است و موجودی پس از تأیید رسید افزایش می‌یابد.</small></span></div><button className="button button-primary wallet-main-button" disabled={numeric<10000} onClick={()=>setStep(2)}>ادامه و انتخاب روش پرداخت</button></div>}
+   {step===2&&<div className="wallet-stage"><div className="wallet-amount-summary"><span><small>مبلغ انتخاب‌شده</small><b>{money(numeric)}</b></span><button onClick={()=>setStep(1)}>ویرایش</button></div><div className="wallet-method-list premium-methods"><button className={!settings.cardEnabled?"disabled":""} disabled={!settings.cardEnabled} onClick={()=>pick("card")}><span className="wallet-method-icon"><CreditCard size={24}/></span><span><b>کارت‌به‌کارت</b><small>{settings.cardEnabled?"واریز ریالی و ارسال تصویر رسید":"در حال حاضر غیرفعال"}</small></span><strong>انتخاب</strong></button><button className={!settings.cryptoEnabled?"disabled":""} disabled={!settings.cryptoEnabled} onClick={()=>pick("crypto")}><span className="wallet-method-icon crypto">₮</span><span><b>پرداخت USDT</b><small>{settings.cryptoEnabled?`نرخ زنده • شبکه ${settings.cryptoNetwork||"BEP20"}`:"در حال حاضر غیرفعال"}</small></span><strong>انتخاب</strong></button></div></div>}
+   {step===3&&<div className="wallet-stage"><div className="wallet-payment-head"><span><small>مبلغ قابل پرداخت</small><b>{money(numeric)}</b></span><button onClick={()=>setStep(2)}>تغییر روش</button></div>{method==="card"?<div className="wallet-payment-card premium-payment-card"><div className="wallet-payment-title"><span className="wallet-method-icon"><CreditCard size={23}/></span><span><b>اطلاعات کارت‌به‌کارت</b><small>مبلغ را دقیقاً واریز کنید.</small></span></div><div className="wallet-copy-row"><span><small>شماره کارت</small><b dir="ltr">{cardFormat(settings.cardNumber)||"در مدیریت ثبت نشده"}</b></span><button onClick={()=>copy(settings.cardNumber.replace(/\D/g,""),"شماره کارت")}><Copy size={18}/></button></div><div className="wallet-copy-row"><span><small>مبلغ واریز</small><b>{money(numeric)}</b></span><button onClick={()=>copy(String(numeric),"مبلغ")}><Copy size={18}/></button></div><div className="wallet-info-row"><small>به نام</small><b>{settings.cardHolder||"—"}</b></div>{cleanTelegramText(settings.cardText)&&<p className="wallet-payment-description">{cleanTelegramText(settings.cardText)}</p>}</div>:<div className="wallet-payment-card premium-payment-card"><div className="wallet-payment-title"><span className="wallet-method-icon crypto">₮</span><span><b>پرداخت دلاری با USDT</b><small>معادل ارزی در سرور محاسبه می‌شود.</small></span></div>{rateLoading?<div className="rate-skeleton"><i/><i/><i/></div>:rate?<><div className="currency-conversion"><span><small>مبلغ تومان</small><b>{money(numeric)}</b></span><i>÷</i><span><small>نرخ USDT</small><b>{money(rate.rateToman)}</b></span><i>=</i><span className="currency-result"><small>مبلغ نهایی</small><strong dir="ltr">{usdt} USDT</strong></span></div><div className="rate-meta"><span className={rate.stale?"stale":"live"}>{rate.stale?"نرخ پشتیبان":"نرخ به‌روز"}</span><small>{rate.source} • {date(rate.fetchedAt)}</small><button onClick={()=>loadRate(true)}><RefreshCw size={15}/>بروزرسانی</button></div></>:<div className="rate-error"><Info size={20}/><span><b>پرداخت ارزی موقتاً در دسترس نیست</b><small>{rateError}</small></span><button onClick={()=>loadRate(true)}>تلاش مجدد</button></div>}<div className="wallet-info-row"><small>شبکه انتقال</small><b>{settings.cryptoNetwork||"BEP20"}</b></div><div className="wallet-copy-row"><span><small>آدرس کیف پول</small><b className="wallet-address" dir="ltr">{settings.cryptoAddress||"در مدیریت ثبت نشده"}</b></span><button onClick={()=>copy(settings.cryptoAddress,"آدرس کیف پول")}><Copy size={18}/></button></div><div className="network-warning"><Info size={18}/><span>فقط از شبکه <b>{settings.cryptoNetwork||"BEP20"}</b> استفاده کنید.</span></div><label className="wallet-hash-field"><span>هش تراکنش <small>اختیاری</small></span><input dir="ltr" value={hash} onChange={e=>setHash(e.target.value)} placeholder="Transaction hash"/></label></div>}<button className="button button-primary wallet-main-button" disabled={method==="crypto"&&(!rate||rateLoading)} onClick={()=>setStep(4)}>پرداخت انجام شد؛ ثبت رسید</button></div>}
+   {step===4&&<div className="wallet-stage">{number?<div className="wallet-submit-success"><span><Check size={28}/></span><h3>درخواست افزایش موجودی ثبت شد</h3><p>کد پیگیری <b dir="ltr">{number}</b> برای بررسی مدیریت ثبت شد.</p><div className="success-summary"><span><small>مبلغ</small><b>{money(numeric)}</b></span><span><small>روش</small><b>{method==="card"?"کارت‌به‌کارت":`${usdt} USDT`}</b></span></div><button className="button button-primary" onClick={()=>setView("history")}>مشاهده تراکنش</button></div>:<><div className="wallet-receipt-header"><span className="wallet-receipt-icon"><FileImage size={26}/></span><div><b>ارسال تصویر رسید</b><p>رسید، مبلغ و روش پرداخت را بررسی کنید.</p></div></div>{preview?<div className="receipt-preview"><img src={preview} alt="پیش‌نمایش رسید"/><button onClick={()=>{URL.revokeObjectURL(preview);setPreview("");setReceipt(null)}}><Trash2 size={17}/>حذف و انتخاب مجدد</button></div>:<label className="receipt-upload-box"><input type="file" accept="image/jpeg,image/png,image/webp" onChange={file}/><Upload size={26}/><span><b>انتخاب تصویر رسید</b><small>JPG، PNG یا WEBP • حداکثر ۵MB</small></span></label>}<div className="wallet-final-summary"><span><small>مبلغ</small><b>{money(numeric)}</b></span><span><small>روش</small><b>{method==="card"?"کارت‌به‌کارت":`${usdt} USDT`}</b></span></div>{error&&<div className="wallet-submit-error">{error}</div>}<button className="button button-dark wallet-main-button" disabled={!receipt||busy} onClick={submit}>{busy?"در حال ثبت رسید…":"ثبت نهایی برای بررسی مدیریت"}</button></>}</div>}
+  </>}
+ </section></div>
 }
