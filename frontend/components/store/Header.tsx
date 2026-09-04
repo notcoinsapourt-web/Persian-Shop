@@ -1,8 +1,8 @@
 "use client";
 
-import { ChevronDown, Headphones, Menu, Search, ShoppingCart, UserRound, WalletCards, X } from "lucide-react";
+import { ChevronDown, Headphones, Menu, ShoppingCart, X } from "lucide-react";
 import type { StoreCategory } from "../../lib/store-data";
-import { BrandIcon } from "./shared";
+import { BrandIcon, RivaIcon } from "./shared";
 import { shortCategory } from "./utils";
 
 export default function Header({
@@ -52,28 +52,28 @@ export default function Header({
       <header className="site-header">
         <div className="page-container header-primary-row">
           <button className="brand-logo" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Persian Shop">
-            <span className="brand-logo-mark">P</span>
+            <span className="brand-logo-image"><img src="/persian-shop-logo.svg" alt=""/></span>
             <span className="brand-logo-copy"><b>{shopName}</b><small>Digital Marketplace</small></span>
           </button>
 
           <form className={`global-search ${searchFocused ? "is-focused" : ""}`} onSubmit={event => { event.preventDefault(); onSearchSubmit(); }}>
-            <Search size={21}/>
+            <RivaIcon name="search" size={21}/>
             <input value={query} onChange={event => onQuery(event.target.value)} onFocus={() => onSearchFocus(true)} placeholder="جستجو در محصولات Persian Shop" aria-label="جستجوی محصولات"/>
             {query && <button type="button" className="search-clear" onClick={() => onQuery("")} aria-label="پاک کردن جستجو"><X size={17}/></button>}
           </form>
 
           <div className="header-actions">
-            <button className="header-account" onClick={onOpenAccount}><UserRound size={22}/><span>{accountLabel}</span></button>
-            <button className="header-icon-button" onClick={onOpenCart} aria-label="سبد خرید"><ShoppingCart size={24}/>{cartCount > 0 && <b className="count-badge">{cartCount}</b>}</button>
+            <button className="header-account" onClick={onOpenAccount}><RivaIcon name="user" size={22}/><span>{accountLabel}</span></button>
+            <button className="header-icon-button" onClick={onOpenCart} aria-label="سبد خرید"><ShoppingCart size={24} strokeWidth={1.75}/>{cartCount > 0 && <b className="count-badge">{cartCount}</b>}</button>
           </div>
         </div>
 
         <div className="page-container desktop-nav-row">
-          <button className="categories-trigger" onClick={onOpenCatalog}><Menu size={18}/>دسته‌بندی محصولات<ChevronDown size={15}/></button>
+          <button className="categories-trigger" onClick={onOpenCatalog}><Menu size={18} strokeWidth={1.75}/>دسته‌بندی محصولات<ChevronDown size={15}/></button>
           <nav className="desktop-categories" aria-label="دسته‌بندی‌های اصلی">{categories.slice(0, 6).map(category => <button key={category.id} onClick={() => onOpenCategory(category.id)}>{shortCategory(category.name)}</button>)}</nav>
           <span className="nav-spacer"/>
-          {isLoggedIn && <button className="nav-utility" onClick={onOpenWallet}><WalletCards size={17}/>کیف پول</button>}
-          <button className="nav-utility" onClick={onSupport}><Headphones size={17}/>پشتیبانی</button>
+          {isLoggedIn && <button className="nav-utility" onClick={onOpenWallet}><RivaIcon name="wallet" size={17}/>کیف پول</button>}
+          <button className="nav-utility" onClick={onSupport}><Headphones size={17} strokeWidth={1.75}/>پشتیبانی</button>
         </div>
 
         <div className="mobile-category-strip"><div className="page-container mobile-category-scroll">{categories.map(category => <button key={category.id} onClick={() => onOpenCategory(category.id)}><BrandIcon id={category.id} size={42}/><span>{shortCategory(category.name)}</span></button>)}</div></div>
