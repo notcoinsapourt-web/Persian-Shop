@@ -3,6 +3,7 @@ import { getSessionUser } from "../../../../lib/web-auth";
 import { getUsdtRate } from "../../../../lib/exchange-rate";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   const user = await getSessionUser(request);
@@ -12,6 +13,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(rate, { headers: { "cache-control": "no-store" } });
   } catch (error) {
     console.error("exchange rate unavailable", error);
-    return NextResponse.json({ error: "نرخ معتبر در دسترس نیست. پرداخت ارزی موقتاً غیرفعال است." }, { status: 503 });
+    return NextResponse.json(
+      { error: "نرخ معتبر در دسترس نیست. پرداخت ارزی موقتاً غیرفعال است." },
+      { status: 503, headers: { "cache-control": "no-store" } },
+    );
   }
 }
