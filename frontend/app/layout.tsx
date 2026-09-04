@@ -10,8 +10,8 @@ export const metadata: Metadata = {
   title: "Persian Shop | فروشگاه خدمات دیجیتال",
   description: "فروشگاه خدمات شبکه‌های اجتماعی، اشتراک‌های هوش مصنوعی و محصولات دیجیتال Persian Shop",
   icons: {
-    icon: "/persian-shop-brand-v4.svg",
-    apple: "/persian-shop-brand-v4.svg",
+    icon: "/persian-shop-logo.svg",
+    apple: "/persian-shop-logo.svg",
   },
 };
 
