@@ -1,5 +1,5 @@
-@font-face{font-family:"IRANYekan";src:url("/api/brand/font/400") format("truetype");font-style:normal;font-weight:400;font-display:swap}
-@font-face{font-family:"IRANYekanLoginBold";src:url("/api/brand/font/700") format("truetype");font-style:normal;font-weight:700;font-display:swap}
+@font-face{font-family:"IRANYekan";src:url("/api/brand/font/400") format("woff2");font-style:normal;font-weight:400;font-display:swap}
+@font-face{font-family:"IRANYekanLoginBold";src:url("/api/brand/font/700") format("woff2");font-style:normal;font-weight:700;font-display:swap}
 
 :root{
   --ps-font:"IRANYekan",Tahoma,Arial,sans-serif;
