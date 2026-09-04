@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, BadgeCheck, Headphones, PackageCheck, SearchCheck, ShieldCheck, Sparkles, UserRound, WalletCards, Zap } from "lucide-react";
+import { ArrowLeft, Headphones, PackageCheck, SearchCheck, ShieldCheck, UserRound, WalletCards, Zap } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { StoreCategory, StoreProduct } from "../../lib/store-data";
 import ProductCard from "./ProductCard";
@@ -33,7 +33,6 @@ export default function HomeView({ categories, products, favorites, isLoggedIn, 
   useEffect(() => { const timer = window.setInterval(() => setSlide(current => (current + 1) % heroSlides.length), 6500); return () => window.clearInterval(timer); }, []);
   const current = heroSlides[slide];
   const heroProducts = products.filter(product => product.category === current.primary && product.image).slice(0, 3);
-  const heroProductCount = categories.find(item => item.id === current.primary)?.count || heroProducts.length;
   const scrollSpecial = (direction: number) => specialRef.current?.scrollBy({ left: direction * 420, behavior: "smooth" });
 
   return (
@@ -45,7 +44,6 @@ export default function HomeView({ categories, products, favorites, isLoggedIn, 
         </div>
         <div className="page-container hero-grid">
           <div className="hero-copy">
-            <span className="hero-eyebrow"><Sparkles size={16}/>{current.eyebrow}</span>
             <h1>{current.title}</h1><p>{current.text}</p>
             <div className="hero-actions">
               <button className="button hero-primary-action" onClick={() => onCategory(current.primary)}>خرید از این دسته<ArrowLeft size={18}/></button>
@@ -59,7 +57,6 @@ export default function HomeView({ categories, products, favorites, isLoggedIn, 
               {heroProducts.map((product, index) => <button key={product.slug} className={`hero-product-poster poster-${index + 1}`} onClick={() => onProduct(product)} aria-label={`مشاهده ${product.name}`}><img src={product.image} alt={product.name}/></button>)}
               {!heroProducts.length && <span className="hero-poster-fallback"><BrandIcon id={current.primary} size={92}/></span>}
             </div>
-            <div className="hero-real-stats"><BadgeCheck size={20}/><span><b>{heroProductCount} محصول فعال</b><small>در دسته {shortCategory(categories.find(item => item.id === current.primary)?.name || current.primary)}</small></span></div>
             <div className="hero-chip-row">{current.chips.map(chip => <span key={chip}>{chip}</span>)}</div>
           </div>
           <div className="hero-pagination">{heroSlides.map((item, index) => <button key={item.key} className={index === slide ? "is-active" : ""} onClick={() => setSlide(index)} aria-label={`اسلاید ${index + 1}`}/>)}</div>
