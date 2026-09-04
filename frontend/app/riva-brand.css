@@ -1,0 +1,44 @@
+@font-face{font-family:"IRANYekan";src:url("/api/brand/font/400") format("woff2");font-style:normal;font-weight:400;font-display:swap}
+@font-face{font-family:"IRANYekanLoginBold";src:url("/api/brand/font/700") format("woff2");font-style:normal;font-weight:700;font-display:swap}
+
+:root{
+  --ps-font:"IRANYekan",Tahoma,Arial,sans-serif;
+  --ps-font-bold:"IRANYekanLoginBold","IRANYekan",Tahoma,Arial,sans-serif;
+  --ps-yellow:#f7c719;
+  --ps-yellow-deep:#e4ae00;
+  --ps-yellow-soft:#fff7d7;
+  --ps-ink:#1c1a17;
+  --ps-ink-soft:#66615a;
+  --ps-border:#e9e4da;
+  --ps-surface:#fff;
+  --ps-surface-alt:#faf8f4;
+  --ps-radius:14px;
+  --ps-motion:180ms;
+}
+html,body,button,input,textarea,select{font-family:var(--ps-font)!important}
+body{font-size:15px;line-height:1.78;letter-spacing:-.01em;color:var(--ps-ink)}
+h1,h2,h3,h4,h5,h6,.brand-logo-copy b,.section-heading h2,.hero-copy h1,.product-card-title,.account-hero-card h2,.wallet-stage-head b,.maintenance-title,.drawer-header b,.catalog-header h2{font-family:var(--ps-font-bold)!important;font-weight:700!important;letter-spacing:-.025em}
+svg{stroke-linecap:round;stroke-linejoin:round}
+.header-actions svg,.mobile-bottom-nav svg,.round-icon-button svg,.nav-utility svg,.categories-trigger svg,.account-panel svg,.wallet-panel svg,.cart-drawer svg{stroke-width:1.75!important}
+.brand-logo-image,.brand-logo-mark{width:46px;height:46px;border-radius:50%;overflow:hidden;display:grid;place-items:center;flex:0 0 46px;background:#ffc41c;box-shadow:0 4px 15px rgba(225,172,0,.18)}
+.brand-logo-image img,.brand-logo-mark img{width:100%;height:100%;object-fit:cover;display:block}
+.brand-logo-copy b{font-size:17px!important;line-height:1.35}.brand-logo-copy small{font-size:11.5px!important}
+.section-heading h2{font-size:clamp(19px,2vw,24px)!important;line-height:1.45}.section-heading p{font-size:13.5px!important;line-height:1.85}
+.product-card-title,.product-card b,.special-card b{font-size:14px!important;line-height:1.65}.product-card small,.special-card small,.category-showcase small,.quick-actions-panel small{font-size:11.5px!important;line-height:1.6}.product-card strong,.special-card strong{font-size:15px!important}
+.hero-copy h1{font-size:clamp(27px,4vw,46px)!important;line-height:1.35}.hero-copy p{font-size:15px!important;line-height:1.95}.hero-eyebrow{font-size:12.5px!important}
+.button{min-height:46px;font-size:14px!important;border-radius:12px;transition:transform var(--ps-motion) ease,box-shadow var(--ps-motion) ease,background var(--ps-motion) ease}.button:active{transform:scale(.985)}
+.button-primary{background:linear-gradient(135deg,#ffd22a,#f4bb05)!important;color:#201b09!important;border-color:#e9b50c!important}.button-primary:hover{box-shadow:0 8px 22px rgba(225,172,0,.2)}
+.account-panel,.wallet-panel,.cart-drawer,.catalog-panel{border-radius:22px 22px 0 0}.account-panel p,.wallet-panel p,.cart-drawer small{font-size:12.5px;line-height:1.8}.account-text-input input,.wallet-panel input{font-size:14px!important}.account-auth-form>label>span{font-size:13px!important}
+.account-hero-card{position:relative;overflow:hidden}.account-brand-logo{width:58px;height:58px;border-radius:50%;object-fit:cover;box-shadow:0 8px 24px rgba(225,172,0,.18);flex:0 0 58px}.wallet-brand-logo{width:44px;height:44px;border-radius:50%;object-fit:cover;box-shadow:0 5px 16px rgba(0,0,0,.08)}
+.riva-icon{display:inline-block;vertical-align:middle;overflow:visible}.riva-icon *{vector-effect:non-scaling-stroke}
+
+.maintenance-page{min-height:100svh;display:grid;place-items:center;padding:28px 18px;background:radial-gradient(circle at 50% 12%,rgba(255,213,54,.30),transparent 32%),linear-gradient(180deg,#fffdf6 0%,#faf8f4 54%,#f5f1e9 100%);color:var(--ps-ink)}
+.maintenance-shell{width:min(620px,100%);position:relative;background:#fff;border:1px solid rgba(201,187,150,.5);border-radius:28px;padding:48px 42px 38px;text-align:center;box-shadow:0 28px 70px rgba(74,59,24,.10);overflow:hidden}
+.maintenance-shell:before{content:"";position:absolute;inset:0 0 auto;height:6px;background:linear-gradient(90deg,#f3b900,#ffd84e,#f3b900)}
+.maintenance-logo{width:96px;height:96px;object-fit:cover;border-radius:50%;box-shadow:0 14px 34px rgba(225,172,0,.24);margin:0 auto 20px;display:block}
+.maintenance-kicker{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:999px;background:var(--ps-yellow-soft);border:1px solid #f4dc7d;font-size:12px;color:#7d6200;margin-bottom:16px}.maintenance-title{font-size:clamp(25px,5vw,34px);line-height:1.45;margin:0 0 12px}.maintenance-message{font-size:14.5px;line-height:2;color:#6d675e;max-width:480px;margin:0 auto;white-space:pre-line}
+.maintenance-activity{display:flex;gap:7px;justify-content:center;margin:26px 0}.maintenance-activity i{display:block;width:38px;height:5px;border-radius:99px;background:#eee9df;overflow:hidden;position:relative}.maintenance-activity i:after{content:"";position:absolute;inset:0;background:#f5c318;transform:translateX(110%);animation:maintenancePulse 1.6s ease-in-out infinite}.maintenance-activity i:nth-child(2):after{animation-delay:.18s}.maintenance-activity i:nth-child(3):after{animation-delay:.36s}@keyframes maintenancePulse{0%,25%{transform:translateX(110%)}60%,100%{transform:translateX(-110%)}}
+.maintenance-note{display:flex;align-items:flex-start;gap:10px;text-align:right;background:#faf8f4;border:1px solid #eee8dc;border-radius:14px;padding:13px 15px;margin:0 0 22px;color:#625d55;font-size:12.5px;line-height:1.8}.maintenance-note svg{flex:0 0 auto;margin-top:2px;color:#bd8f00}
+.maintenance-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.maintenance-actions a{min-height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--ps-font-bold);font-size:13.5px;text-decoration:none}.maintenance-refresh{background:#1c1a17;color:#fff}.maintenance-support{background:#fff4c9;color:#594400;border:1px solid #eed066}.maintenance-foot{margin-top:20px;font-size:11.5px;color:#989187}
+
+@media(max-width:640px){body{font-size:14.5px}.brand-logo-image,.brand-logo-mark{width:42px;height:42px;flex-basis:42px}.brand-logo-copy b{font-size:16px!important}.hero-copy h1{font-size:26px!important}.hero-copy p{font-size:14px!important}.section-heading h2{font-size:18px!important}.section-heading p{font-size:12.5px!important}.product-card-title,.product-card b,.special-card b{font-size:13px!important}.product-card small,.special-card small,.category-showcase small,.quick-actions-panel small{font-size:11px!important}.product-card strong,.special-card strong{font-size:14px!important}.mobile-bottom-nav span{font-size:10.5px!important}.maintenance-page{padding:18px 14px}.maintenance-shell{padding:38px 20px 26px;border-radius:24px}.maintenance-logo{width:82px;height:82px}.maintenance-title{font-size:25px}.maintenance-message{font-size:14px}.maintenance-actions{grid-template-columns:1fr}.maintenance-note{font-size:12px}}
