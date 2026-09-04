@@ -190,7 +190,7 @@ export default function StoreShell({ data }: { data: StoreData }) {
 
       <footer className="site-footer">
         <div className="page-container footer-grid">
-          <div className="footer-brand"><div className="footer-brand-lockup"><span className="brand-logo-image"><img src="/persian-shop-logo.svg" alt=""/></span><span><b>{settings.shopName}</b><small>Digital Marketplace</small></span></div><p>فروشگاه خدمات دیجیتال با دسته‌بندی شفاف، محصولات واقعی و مسیر خرید ساده و قابل پیگیری.</p></div>
+          <div className="footer-brand"><div className="footer-brand-lockup"><span className="brand-logo-image"><img src="/api/brand/logo?brand=exact-user-v4" alt=""/></span><span><b>{settings.shopName}</b><small>Digital Marketplace</small></span></div><p>فروشگاه خدمات دیجیتال با دسته‌بندی شفاف، محصولات واقعی و مسیر خرید ساده و قابل پیگیری.</p></div>
           <div><b>فروشگاه</b><button onClick={() => openCatalog("all")}>همه محصولات</button><button onClick={() => setCartOpen(true)}>سبد خرید</button>{user && <button onClick={openWallet}>کیف پول</button>}</div>
           <div><b>حساب و پشتیبانی</b><button onClick={() => setAccountOpen(true)}>حساب کاربری</button><button onClick={openSupport}>پشتیبانی</button><button onClick={() => document.querySelector(".faq-section")?.scrollIntoView({ behavior: "smooth" })}>سؤالات متداول</button></div>
           <div><b>دسته‌بندی‌های محبوب</b>{categories.slice(0, 4).map(item => <button key={item.id} onClick={() => openCatalog(item.id)}>{item.name}</button>)}</div>
@@ -205,7 +205,7 @@ export default function StoreShell({ data }: { data: StoreData }) {
       {user && <WalletPanel open={walletOpen} balance={user.balance} settings={settings} onClose={() => setWalletOpen(false)} onNotify={notify} onSubmitted={() => notify("رسید برای بررسی مدیریت ثبت شد")}/>} 
       <MobileNav cartCount={cartCount} isLoggedIn={Boolean(user)} onHome={home} onCatalog={() => openCatalog("all")} onCart={() => setCartOpen(true)} onWallet={openWallet} onSupport={openSupport} onAccount={() => setAccountOpen(true)}/>
 
-      {supportOpen && <div className="modal-backdrop" onMouseDown={() => setSupportOpen(false)}><section className="support-dialog" onMouseDown={event => event.stopPropagation()}><button className="sheet-close" onClick={() => setSupportOpen(false)} aria-label="بستن"><X size={21}/></button><img className="account-brand-logo" src="/persian-shop-logo.svg" alt="Persian Shop"/><h2>پشتیبانی Persian Shop</h2><p>برای پیگیری سفارش، پرداخت یا حساب کاربری از پشتیبانی فروشگاه کمک بگیرید.</p><button className="button button-primary" onClick={() => setSupportOpen(false)}>بستن</button></section></div>}
+      {supportOpen && <div className="modal-backdrop" onMouseDown={() => setSupportOpen(false)}><section className="support-dialog" onMouseDown={event => event.stopPropagation()}><button className="sheet-close" onClick={() => setSupportOpen(false)} aria-label="بستن"><X size={21}/></button><img className="account-brand-logo" src="/api/brand/logo?brand=exact-user-v4" alt="Persian Shop"/><h2>پشتیبانی Persian Shop</h2><p>برای پیگیری سفارش، پرداخت یا حساب کاربری از پشتیبانی فروشگاه کمک بگیرید.</p><button className="button button-primary" onClick={() => setSupportOpen(false)}>بستن</button></section></div>}
       {toast && <div className="store-toast"><Check size={17}/>{toast}</div>}
     </main>
   );
