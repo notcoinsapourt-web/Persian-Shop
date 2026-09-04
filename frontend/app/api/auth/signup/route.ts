@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       await client.query("BEGIN");
       const inserted = await client.query(
         `INSERT INTO web_users (email, password_hash, phone, last_login_at)
-         VALUES ($1, $2, $3, NOW()) RETURNING id, email, phone`,
+         VALUES ($1, $2, $3, NOW()) RETURNING id, email, phone, created_at`,
         [email, passwordHash, phone]
       );
       const user = inserted.rows[0];
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       await client.query("COMMIT");
 
       const session = await createSession(Number(user.id), request.headers.get("user-agent") || "");
-      const response = NextResponse.json({ user: { id: Number(user.id), email: user.email, phone: user.phone, balance: 0 } }, { status: 201 });
+      const response = NextResponse.json({ user: { id: Number(user.id), email: user.email, phone: user.phone, balance: 0, createdAt: new Date(user.created_at).toISOString() } }, { status: 201 });
       setSessionCookie(response, session.token, session.expiresAt);
       return response;
     } catch (error) {
