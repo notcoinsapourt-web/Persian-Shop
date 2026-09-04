@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { RIVA_FONT_400 } from "../../../../../../lib/riva-font-400";
-import { RIVA_FONT_700 } from "../../../../../../lib/riva-font-700";
+import { RIVA_FONT_400 } from "../../../../../lib/riva-font-400";
+import { RIVA_FONT_700 } from "../../../../../lib/riva-font-700";
 
 export const runtime = "nodejs";
 
