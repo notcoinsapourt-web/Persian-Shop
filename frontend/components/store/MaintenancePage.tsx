@@ -5,7 +5,7 @@ export default function MaintenancePage({ shopName, supportUsername }: { shopNam
   return (
     <main className="maintenance-page">
       <section className="maintenance-shell" aria-labelledby="maintenance-title">
-        <img className="maintenance-logo" src="/persian-shop-logo.svg" alt={`${shopName} logo`}/>
+        <img className="maintenance-logo" src="/persian-shop-brand-v4.svg" alt={`${shopName} logo`}/>
         <span className="maintenance-kicker"><Wrench size={16} strokeWidth={1.75}/> بروزرسانی فروشگاه</span>
         <h1 className="maintenance-title" id="maintenance-title">{shopName} در حال بروزرسانی است</h1>
         <p className="maintenance-message">سایت در حال تعمیر و بروزرسانی می‌باشد.{"\n"}لطفاً کمی بعد دوباره تلاش کنید.</p>
