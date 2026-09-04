@@ -67,11 +67,11 @@ export default function Header({
               }}
             >
               <img
-                src="/persian-shop-logo.svg"
+                src="/api/brand/logo"
                 alt={`${shopName} logo`}
                 width={48}
                 height={48}
-                style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
             </span>
             <span className="brand-logo-copy"><b>{shopName}</b><small>Digital Marketplace</small></span>
