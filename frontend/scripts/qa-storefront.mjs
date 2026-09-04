@@ -3,7 +3,7 @@ import fs from "node:fs";
 
 const baseUrl = process.env.QA_URL || "http://127.0.0.1:8090";
 const failures = [];
-const report = { baseUrl, mobile: {}, desktop: {}, auth: {}, consoleErrors: [] };
+const report = { baseUrl, mobile: {}, desktop: {}, auth: {}, brand: {}, consoleErrors: [] };
 
 const fail = (message) => failures.push(message);
 
@@ -14,6 +14,15 @@ async function expectVisible(locator, label) {
 
 async function fontSize(page, selector) {
   return page.locator(selector).first().evaluate((el) => Number.parseFloat(getComputedStyle(el).fontSize));
+}
+
+async function brandFontState(page) {
+  await page.evaluate(() => document.fonts.ready);
+  return page.evaluate(() => ({
+    regular: document.fonts.check('14px "IRANYekan"'),
+    bold: document.fonts.check('18px "IRANYekanLoginBold"'),
+    bodyFamily: getComputedStyle(document.body).fontFamily,
+  }));
 }
 
 const browser = await chromium.launch({ headless: true });
@@ -30,10 +39,17 @@ try {
     await page.waitForTimeout(1400);
 
     await expectVisible(page.locator(".site-header"), "mobile header");
+    await expectVisible(page.locator(".brand-logo-image img"), "Persian Shop brand logo");
     await expectVisible(page.locator(".global-search"), "mobile search");
     await expectVisible(page.locator(".hero-copy h1"), "mobile hero title");
     await expectVisible(page.locator(".mobile-bottom-nav"), "mobile bottom nav");
     await expectVisible(page.locator(".product-card").first(), "mobile product card");
+
+    const fontState = await brandFontState(page);
+    report.brand.mobile = fontState;
+    if (!fontState.regular) fail("RIVA IRANYekan regular font did not load");
+    if (!fontState.bold) fail("RIVA IRANYekanLoginBold font did not load");
+    if (!fontState.bodyFamily.includes("IRANYekan")) fail(`body is not using RIVA font: ${fontState.bodyFamily}`);
 
     const dimensions = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth }));
     report.mobile.dimensions = dimensions;
@@ -45,13 +61,15 @@ try {
       product: await fontSize(page, ".product-card-title"),
       search: await fontSize(page, ".global-search input"),
       bottomNav: await fontSize(page, ".mobile-bottom-nav button"),
+      metadata: await fontSize(page, ".product-card small"),
     };
     report.mobile.fonts = fonts;
-    if (fonts.hero < 20) fail(`mobile hero font too small: ${fonts.hero}`);
-    if (fonts.section < 16) fail(`mobile section font too small: ${fonts.section}`);
-    if (fonts.product < 11) fail(`mobile product font too small: ${fonts.product}`);
-    if (fonts.search < 11) fail(`mobile search font too small: ${fonts.search}`);
-    if (fonts.bottomNav < 8) fail(`mobile nav font too small: ${fonts.bottomNav}`);
+    if (fonts.hero < 24) fail(`mobile hero font too small: ${fonts.hero}`);
+    if (fonts.section < 18) fail(`mobile section font too small: ${fonts.section}`);
+    if (fonts.product < 13) fail(`mobile product font too small: ${fonts.product}`);
+    if (fonts.search < 12) fail(`mobile search font too small: ${fonts.search}`);
+    if (fonts.bottomNav < 11) fail(`mobile nav font too small: ${fonts.bottomNav}`);
+    if (fonts.metadata < 11) fail(`mobile metadata font too small: ${fonts.metadata}`);
 
     const visibleWalletTabs = await page.locator(".mobile-bottom-nav button").filter({ hasText: "کیف پول" }).count();
     report.mobile.guestWalletTabs = visibleWalletTabs;
@@ -72,7 +90,6 @@ try {
     const authInputs = page.locator(".account-auth-form input");
     report.auth.registrationInputs = await authInputs.count();
     if ((await authInputs.count()) !== 4) fail("registration form should have 4 inputs");
-    await expectVisible(page.locator(".account-auth-form").getByText("شماره موبایل", { exact: false }), "optional phone label");
     const phoneLabelText = await page.locator(".account-auth-form label").last().innerText();
     if (!phoneLabelText.includes("اختیاری")) fail("phone field should be visibly optional");
     await page.locator(".account-panel .sheet-close").click();
@@ -127,6 +144,10 @@ try {
     if (await page.locator(".mobile-bottom-nav").isVisible()) fail("mobile bottom nav visible on desktop");
     if (await page.locator(".desktop-nav-row .nav-utility").filter({ hasText: "کیف پول" }).count()) fail("desktop guest wallet navigation should be hidden");
 
+    const fontState = await brandFontState(page);
+    report.brand.desktop = fontState;
+    if (!fontState.regular || !fontState.bold) fail("RIVA fonts are not loaded on desktop");
+
     const dimensions = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth }));
     report.desktop.dimensions = dimensions;
     if (dimensions.scrollWidth > dimensions.width + 2) fail(`desktop horizontal overflow: ${dimensions.scrollWidth} > ${dimensions.width}`);
@@ -140,7 +161,8 @@ try {
     report.desktop.fonts = fonts;
     if (fonts.hero < 34) fail(`desktop hero font too small: ${fonts.hero}`);
     if (fonts.section < 19) fail(`desktop section font too small: ${fonts.section}`);
-    if (fonts.product < 12) fail(`desktop product font too small: ${fonts.product}`);
+    if (fonts.product < 13) fail(`desktop product font too small: ${fonts.product}`);
+    if (fonts.search < 12) fail(`desktop search font too small: ${fonts.search}`);
 
     const search = page.locator(".global-search input");
     await search.click();
