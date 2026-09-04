@@ -4,6 +4,7 @@ import "./globals.css";
 import "./polish.css";
 import "./account.css";
 import "./riva-brand.css";
+import "./mobile-nav-fix.css";
 
 export const metadata: Metadata = {
   title: "Persian Shop | فروشگاه خدمات دیجیتال",

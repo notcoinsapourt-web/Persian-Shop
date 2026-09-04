@@ -1,0 +1,101 @@
+/* Mobile navigation stabilization for Persian Shop V4 */
+.mobile-nav{display:none}
+
+@media(max-width:700px){
+  .store-shell{padding-bottom:calc(82px + env(safe-area-inset-bottom,0px))}
+
+  .mobile-nav{
+    position:fixed!important;
+    left:0;
+    right:0;
+    bottom:0;
+    z-index:110;
+    min-height:70px;
+    height:calc(70px + env(safe-area-inset-bottom,0px));
+    padding:6px 7px calc(6px + env(safe-area-inset-bottom,0px));
+    display:grid!important;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    align-items:stretch;
+    direction:rtl;
+    background:rgba(255,255,255,.985);
+    border-top:1px solid #e6e8ec;
+    box-shadow:0 -8px 28px rgba(22,27,34,.08);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+    isolation:isolate;
+  }
+
+  .mobile-nav button{
+    min-width:0;
+    min-height:58px;
+    padding:4px 2px;
+    border:0;
+    background:transparent;
+    color:#2e3238;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    position:relative;
+    overflow:visible;
+    font-family:var(--ps-font,inherit);
+    font-size:11.5px!important;
+    font-weight:600;
+    line-height:1.25;
+    -webkit-tap-highlight-color:transparent;
+  }
+
+  .mobile-nav button:active{background:#fff8d8;border-radius:12px}
+  .mobile-nav button>span:last-child{display:block;white-space:nowrap;line-height:1.2}
+  .mobile-nav svg{display:block;flex:0 0 auto;stroke-width:1.8}
+
+  .mobile-cart-action{overflow:visible!important}
+  .mobile-cart-action .mobile-cart-orb{
+    width:50px;
+    height:50px;
+    border-radius:50%;
+    position:absolute;
+    top:-15px;
+    left:50%;
+    transform:translateX(-50%);
+    display:grid;
+    place-items:center;
+    background:linear-gradient(145deg,#ffd934,#f4bd08);
+    color:#2d2300;
+    border:1px solid rgba(178,132,0,.16);
+    box-shadow:0 0 0 6px #fff,0 9px 22px rgba(205,157,0,.24);
+  }
+
+  .mobile-cart-action>span:last-child{margin-top:31px}
+  .mobile-cart-orb em{
+    position:absolute;
+    top:-5px;
+    right:-5px;
+    min-width:18px;
+    height:18px;
+    padding:0 5px;
+    border-radius:10px;
+    display:grid;
+    place-items:center;
+    background:#23262b;
+    color:#fff;
+    font-size:9px;
+    font-style:normal;
+    font-weight:800;
+    box-shadow:0 2px 6px rgba(0,0,0,.14);
+  }
+
+  .site-footer{margin-bottom:0}
+}
+
+@media(max-width:420px){
+  .mobile-nav{padding-inline:4px}
+  .mobile-nav button{font-size:11px!important}
+  .mobile-cart-action .mobile-cart-orb{width:48px;height:48px}
+}
+
+@media(min-width:701px){
+  .mobile-nav{display:none!important}
+  .store-shell{padding-bottom:0}
+}
