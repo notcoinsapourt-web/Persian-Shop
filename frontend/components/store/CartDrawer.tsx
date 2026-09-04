@@ -1,22 +1,28 @@
 "use client";
 
-import { Headphones, Minus, Plus, ShoppingCart, Trash2, X } from "lucide-react";
+import { LogIn, Minus, Plus, ShoppingCart, Trash2, WalletCards, X } from "lucide-react";
 import type { CartLine } from "./types";
 import { EmptyState } from "./shared";
 import { money } from "./utils";
 
-export default function CartDrawer({ open, cart, onClose, onQty, onRemove, onCatalog, onSupport }: {
+export default function CartDrawer({ open, cart, isLoggedIn, walletBalance, checkingOut, onClose, onQty, onRemove, onCatalog, onLogin, onWallet, onCheckout }: {
   open: boolean;
   cart: CartLine[];
+  isLoggedIn: boolean;
+  walletBalance: number;
+  checkingOut: boolean;
   onClose: () => void;
   onQty: (index: number, delta: number) => void;
   onRemove: (index: number) => void;
   onCatalog: () => void;
-  onSupport: () => void;
+  onLogin: () => void;
+  onWallet: () => void;
+  onCheckout: () => void;
 }) {
   if (!open) return null;
   const count = cart.reduce((sum, line) => sum + line.qty, 0);
   const total = cart.reduce((sum, line) => sum + line.product.price * line.qty, 0);
+  const hasBalance = walletBalance >= total;
 
   return (
     <>
@@ -28,30 +34,29 @@ export default function CartDrawer({ open, cart, onClose, onQty, onRemove, onCat
         </header>
 
         <div className="cart-drawer-body">
-          {cart.length ? cart.map((line, index) => (
-            <article className="cart-item" key={`${line.product.slug}-${index}`}>
-              <span className="cart-item-image">{line.product.image ? <img src={line.product.image} alt={line.product.name}/> : "P"}</span>
-              <div className="cart-item-content">
-                <b>{line.product.name}</b>
-                <small>{line.input}</small>
-                <strong>{money(line.product.price * line.qty)}</strong>
-              </div>
-              <div className="cart-item-actions">
-                <button className="remove-cart-item" onClick={() => onRemove(index)} aria-label="حذف از سبد"><Trash2 size={16}/></button>
-                <div className="cart-qty-control"><button onClick={() => onQty(index, 1)} aria-label="افزایش"><Plus size={15}/></button><b>{line.qty}</b><button onClick={() => onQty(index, -1)} aria-label="کاهش"><Minus size={15}/></button></div>
-              </div>
-            </article>
-          )) : <EmptyState title="سبد خرید خالی است" description="محصول موردنظرت را از دسته‌بندی‌ها انتخاب و به سبد اضافه کن." action="مشاهده محصولات" onAction={() => { onClose(); onCatalog(); }}/>} 
+          {cart.length ? cart.map((line, index) => <article className="cart-item" key={`${line.product.slug}-${index}`}>
+            <span className="cart-item-image">{line.product.image ? <img src={line.product.image} alt={line.product.name}/> : "P"}</span>
+            <div className="cart-item-content"><b>{line.product.name}</b><small>{line.input}</small><strong>{money(line.product.price * line.qty)}</strong></div>
+            <div className="cart-item-actions"><button className="remove-cart-item" onClick={() => onRemove(index)} aria-label="حذف از سبد"><Trash2 size={16}/></button><div className="cart-qty-control"><button onClick={() => onQty(index, 1)} aria-label="افزایش"><Plus size={15}/></button><b>{line.qty}</b><button onClick={() => onQty(index, -1)} aria-label="کاهش"><Minus size={15}/></button></div></div>
+          </article>) : <EmptyState title="سبد خرید خالی است" description="محصول موردنظرت را از دسته‌بندی‌ها انتخاب و به سبد اضافه کن." action="مشاهده محصولات" onAction={() => { onClose(); onCatalog(); }}/>} 
         </div>
 
-        {!!cart.length && (
-          <footer className="cart-summary">
-            <div className="cart-summary-row"><span>تعداد آیتم‌ها</span><b>{count}</b></div>
-            <div className="cart-summary-row cart-total"><span>مبلغ کل</span><strong>{money(total)}</strong></div>
-            <div className="cart-checkout-note">ثبت نهایی سفارش وب هنوز به Backend سفارش متصل نشده است؛ برای جلوگیری از سفارش جعلی، مسیر فعلی از پشتیبانی ادامه پیدا می‌کند.</div>
-            <button className="button button-primary cart-checkout-button" onClick={onSupport}><Headphones size={18}/>ادامه ثبت سفارش با پشتیبانی</button>
-          </footer>
-        )}
+        {!!cart.length && <footer className="cart-summary">
+          <div className="cart-summary-row"><span>تعداد آیتم‌ها</span><b>{count}</b></div>
+          <div className="cart-summary-row cart-total"><span>مبلغ کل</span><strong>{money(total)}</strong></div>
+          {isLoggedIn && <div className="cart-wallet-balance"><span>موجودی کیف پول</span><b className={hasBalance ? "is-enough" : "is-low"}>{money(walletBalance)}</b></div>}
+
+          {!isLoggedIn ? <>
+            <div className="cart-checkout-note">برای ثبت نهایی سفارش و پرداخت امن، ابتدا وارد حساب سایت شوید.</div>
+            <button className="button button-primary cart-checkout-button" onClick={onLogin}><LogIn size={18}/>ورود یا ثبت‌نام</button>
+          </> : !hasBalance ? <>
+            <div className="cart-checkout-note">موجودی کیف پول برای این سفارش کافی نیست. ابتدا موجودی را افزایش دهید.</div>
+            <button className="button button-primary cart-checkout-button" onClick={onWallet}><WalletCards size={18}/>افزایش موجودی</button>
+          </> : <>
+            <div className="cart-checkout-note">مبلغ نهایی از کیف پول کسر می‌شود و سفارش فوراً وارد «بخش سایت» مدیریت ربات خواهد شد.</div>
+            <button className="button button-primary cart-checkout-button" disabled={checkingOut} onClick={onCheckout}><ShoppingCart size={18}/>{checkingOut ? "در حال ثبت سفارش…" : "ثبت و پرداخت سفارش"}</button>
+          </>}
+        </footer>}
       </aside>
     </>
   );
