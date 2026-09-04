@@ -54,13 +54,11 @@ try {
     if (fonts.search < 11) fail(`mobile search font too small: ${fonts.search}`);
     if (fonts.bottomNav < 8) fail(`mobile nav font too small: ${fonts.bottomNav}`);
 
-    // Guest wallet must not be exposed in primary UI.
     const visibleWalletTabs = await page.locator(".mobile-bottom-nav button").filter({ hasText: "کیف پول" }).count();
     report.mobile.guestWalletTabs = visibleWalletTabs;
     if (visibleWalletTabs !== 0) fail("guest wallet tab should be hidden");
     if (await page.locator(".wallet-promo").count()) fail("guest wallet promo should be hidden");
 
-    // Protected APIs must reject a guest session.
     const meResponse = await page.request.get(`${baseUrl}/api/auth/me`);
     const walletResponse = await page.request.get(`${baseUrl}/api/wallet`);
     report.auth.guestMeStatus = meResponse.status();
@@ -68,7 +66,6 @@ try {
     if (meResponse.status() !== 401) fail(`guest /api/auth/me expected 401, got ${meResponse.status()}`);
     if (walletResponse.status() !== 401) fail(`guest /api/wallet expected 401, got ${walletResponse.status()}`);
 
-    // Registration UI: email + password + repeat + optional phone.
     await page.locator(".mobile-bottom-nav button").filter({ hasText: "حساب من" }).click();
     await expectVisible(page.locator(".account-panel"), "mobile account");
     await page.getByRole("button", { name: "ثبت‌نام", exact: true }).click();
@@ -80,7 +77,6 @@ try {
     if (!phoneLabelText.includes("اختیاری")) fail("phone field should be visibly optional");
     await page.locator(".account-panel .sheet-close").click();
 
-    // Category flow
     const firstCategory = page.locator(".mobile-category-scroll button").first();
     await firstCategory.click();
     await expectVisible(page.locator(".catalog-layer"), "mobile catalog");
@@ -92,7 +88,6 @@ try {
     if (catalogOverflow) fail("mobile catalog horizontal overflow");
     await page.locator(".catalog-topbar .round-icon-button").click();
 
-    // Product + cart flow
     await page.locator(".product-card-title").first().click();
     await expectVisible(page.locator(".product-sheet"), "mobile product sheet");
     await page.locator(".order-input-block textarea").fill("https://example.com/order-test");
@@ -104,8 +99,9 @@ try {
     const cartItems = await page.locator(".cart-item").count();
     report.mobile.cartItems = cartItems;
     if (cartItems < 1) fail("cart item was not added");
-    await expectVisible(page.getByRole("button", { name: "ورود یا ثبت‌نام" }), "guest checkout login gate");
-    await page.getByRole("button", { name: "ورود یا ثبت‌نام" }).click();
+    const checkoutLogin = page.locator(".cart-drawer").getByRole("button", { name: "ورود یا ثبت‌نام", exact: true });
+    await expectVisible(checkoutLogin, "guest checkout login gate");
+    await checkoutLogin.click();
     await expectVisible(page.locator(".account-panel"), "account opened from checkout gate");
     await page.locator(".account-panel .sheet-close").click();
 
@@ -147,7 +143,6 @@ try {
     if (fonts.section < 19) fail(`desktop section font too small: ${fonts.section}`);
     if (fonts.product < 12) fail(`desktop product font too small: ${fonts.product}`);
 
-    // Search discovery interaction
     const search = page.locator(".global-search input");
     await search.click();
     await expectVisible(page.locator(".search-overlay"), "desktop search overlay");
@@ -158,7 +153,6 @@ try {
     if (searchMatches < 1) fail("desktop search returned no matches for تلگرام");
     if (await page.locator(".search-overlay-backdrop").count()) await page.locator(".search-overlay-backdrop").click({ position: { x: 4, y: 4 } }).catch(() => {});
 
-    // Desktop account auth form must also render cleanly.
     await page.locator(".header-account").click();
     await expectVisible(page.locator(".account-panel"), "desktop account panel");
     await page.getByRole("button", { name: "ثبت‌نام", exact: true }).click();
