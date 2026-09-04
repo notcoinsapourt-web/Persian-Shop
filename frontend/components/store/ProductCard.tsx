@@ -30,7 +30,7 @@ export default function ProductCard({ product, favorite, onFavorite, onOpen, com
         <div className="availability-row"><span className="availability-dot"/>قابل سفارش <span className="availability-separator"/> تحویل دیجیتال</div>
         <div className="product-card-footer">
           <strong>{money(product.price)}</strong>
-          <button className="product-order-button" onClick={() => onOpen(product)} aria-label={`سفارش ${product.name}`}><ShoppingBag size={16}/><span>سفارش</span></button>
+          <button className="product-order-button" onClick={() => onOpen(product)} aria-label={`خرید ${product.name}`}><ShoppingBag size={16}/><span>خرید محصول</span></button>
         </div>
       </div>
     </article>
