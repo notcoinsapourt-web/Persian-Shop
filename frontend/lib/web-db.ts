@@ -113,6 +113,10 @@ export async function ensureWebSchema(): Promise<void> {
         proof_mime VARCHAR(80) NOT NULL,
         proof_bytes BYTEA NOT NULL,
         transaction_hash TEXT,
+        exchange_rate_toman BIGINT,
+        crypto_amount_cents BIGINT,
+        rate_source TEXT,
+        rate_fetched_at TIMESTAMPTZ,
         status VARCHAR(20) NOT NULL DEFAULT 'pending',
         reviewed_by_telegram_id BIGINT,
         reviewed_at TIMESTAMPTZ,
@@ -121,6 +125,11 @@ export async function ensureWebSchema(): Promise<void> {
 
       CREATE INDEX IF NOT EXISTS ix_web_deposits_user ON web_deposits(user_id, created_at DESC);
       CREATE INDEX IF NOT EXISTS ix_web_deposits_status ON web_deposits(status, created_at DESC);
+
+      ALTER TABLE web_deposits ADD COLUMN IF NOT EXISTS exchange_rate_toman BIGINT;
+      ALTER TABLE web_deposits ADD COLUMN IF NOT EXISTS crypto_amount_cents BIGINT;
+      ALTER TABLE web_deposits ADD COLUMN IF NOT EXISTS rate_source TEXT;
+      ALTER TABLE web_deposits ADD COLUMN IF NOT EXISTS rate_fetched_at TIMESTAMPTZ;
     `);
   })().catch(error => {
     globalThis.__persianShopSchemaPromise = undefined;
