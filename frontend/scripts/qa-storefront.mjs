@@ -61,7 +61,7 @@ try {
       product: await fontSize(page, ".product-card-title"),
       search: await fontSize(page, ".global-search input"),
       bottomNav: await fontSize(page, ".mobile-bottom-nav button"),
-      metadata: await fontSize(page, ".product-card small"),
+      metadata: await fontSize(page, ".availability-row"),
     };
     report.mobile.fonts = fonts;
     if (fonts.hero < 24) fail(`mobile hero font too small: ${fonts.hero}`);
@@ -81,7 +81,7 @@ try {
     const walletResponse = await page.request.get(`${baseUrl}/api/wallet`);
     report.auth.guestMeStatus = meResponse.status();
     report.auth.guestWalletStatus = walletResponse.status();
-    if (meResponse.status() !== 200 || mePayload.user !== null) fail(`guest /api/auth/me should return 200 with user:null`);
+    if (meResponse.status() !== 200 || mePayload.user !== null) fail("guest /api/auth/me should return 200 with user:null");
     if (walletResponse.status() !== 401) fail(`guest /api/wallet expected 401, got ${walletResponse.status()}`);
 
     await page.locator(".mobile-bottom-nav button").filter({ hasText: "حساب من" }).click();
