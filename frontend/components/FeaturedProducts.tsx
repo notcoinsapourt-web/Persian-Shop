@@ -1,6 +1,11 @@
 import ProductCard from './ProductCard';
 
-const products = [
+type Product = {
+  name: string;
+  price: string;
+};
+
+const products: Product[] = [
   { name: 'Telegram Premium', price: '99,000 Toman' },
   { name: 'ChatGPT Plus', price: '499,000 Toman' },
   { name: 'Instagram Services', price: '120,000 Toman' },
