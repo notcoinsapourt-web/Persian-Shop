@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "../../../../lib/web-auth";
 import { ensureWebSchema, getWebPool } from "../../../../lib/web-db";
+import { getUsdtRate, tomanToCents } from "../../../../lib/exchange-rate";
 
 export const runtime = "nodejs";
 
@@ -29,11 +30,13 @@ export async function POST(request: NextRequest) {
 
     const bytes = Buffer.from(await receipt.arrayBuffer());
     const number = depositNumber();
+    const rate = method === "crypto" ? await getUsdtRate() : null;
+    const cryptoAmountCents = rate ? tomanToCents(amount, rate.rateToman) : null;
     const result = await getWebPool().query(
-      `INSERT INTO web_deposits (number, user_id, method, amount, proof_name, proof_mime, proof_bytes, transaction_hash, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')
-       RETURNING id, number, method, amount, status, created_at`,
-      [number, user.id, method, amount, receipt.name.slice(0, 300), receipt.type, bytes, transactionHash]
+      `INSERT INTO web_deposits (number, user_id, method, amount, proof_name, proof_mime, proof_bytes, transaction_hash, exchange_rate_toman, crypto_amount_cents, rate_source, rate_fetched_at, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pending')
+       RETURNING id, number, method, amount, exchange_rate_toman, crypto_amount_cents, rate_source, rate_fetched_at, status, created_at`,
+      [number, user.id, method, amount, receipt.name.slice(0, 300), receipt.type, bytes, transactionHash, rate?.rateToman || null, cryptoAmountCents, rate?.source || null, rate?.fetchedAt || null]
     );
     const row = result.rows[0];
     return NextResponse.json({ deposit: { ...row, id: Number(row.id), amount: Number(row.amount) } }, { status: 201 });
