@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import { categories as fallbackCategories, products as fallbackProducts } from "../data/catalog";
+import { ensureWebSchema } from "./web-db";
 
 export type StoreCategory={id:string;dbId?:number;name:string;en:string;emoji:string;description:string;count:number};
 export type StoreProduct={id:number|string;slug:string;category:string;name:string;en:string;description:string;price:number;image:string;emoji:string;inputPrompt:string};
@@ -33,6 +34,7 @@ function fallback():StoreData{
 
 export async function getStoreData():Promise<StoreData>{
  if(!process.env.DATABASE_URL)return fallback();
+ await ensureWebSchema();
  const pool=new Pool({connectionString:process.env.DATABASE_URL,max:3});
  try{
   const [catalog,settingsResult]=await Promise.all([
