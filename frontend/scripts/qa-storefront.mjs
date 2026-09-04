@@ -17,12 +17,30 @@ async function fontSize(page, selector) {
 }
 
 async function brandFontState(page) {
-  await page.evaluate(() => document.fonts.ready);
-  return page.evaluate(() => ({
-    regular: document.fonts.check('14px "IRANYekan"'),
-    bold: document.fonts.check('18px "IRANYekanLoginBold"'),
-    bodyFamily: getComputedStyle(document.body).fontFamily,
-  }));
+  const endpoint400 = await page.request.get(`${baseUrl}/api/brand/font/400`);
+  const endpoint700 = await page.request.get(`${baseUrl}/api/brand/font/700`);
+  const bytes400 = (await endpoint400.body()).length;
+  const bytes700 = (await endpoint700.body()).length;
+  const loaded = await page.evaluate(async () => {
+    const result = { regular: false, bold: false, loadError: "" };
+    try {
+      await Promise.all([
+        document.fonts.load('400 14px "IRANYekan"', "فروشگاه پرشین شاپ"),
+        document.fonts.load('700 18px "IRANYekanLoginBold"', "فروشگاه پرشین شاپ"),
+      ]);
+      result.regular = document.fonts.check('400 14px "IRANYekan"', "فروشگاه");
+      result.bold = document.fonts.check('700 18px "IRANYekanLoginBold"', "پرشین شاپ");
+    } catch (error) {
+      result.loadError = String(error);
+    }
+    return result;
+  });
+  return {
+    ...loaded,
+    endpoint400: { status: endpoint400.status(), type: endpoint400.headers()["content-type"] || "", bytes: bytes400 },
+    endpoint700: { status: endpoint700.status(), type: endpoint700.headers()["content-type"] || "", bytes: bytes700 },
+    bodyFamily: await page.evaluate(() => getComputedStyle(document.body).fontFamily),
+  };
 }
 
 const browser = await chromium.launch({ headless: true });
@@ -47,8 +65,10 @@ try {
 
     const fontState = await brandFontState(page);
     report.brand.mobile = fontState;
-    if (!fontState.regular) fail("RIVA IRANYekan regular font did not load");
-    if (!fontState.bold) fail("RIVA IRANYekanLoginBold font did not load");
+    if (fontState.endpoint400.status !== 200 || fontState.endpoint400.bytes < 10000) fail(`RIVA 400 endpoint invalid: ${JSON.stringify(fontState.endpoint400)}`);
+    if (fontState.endpoint700.status !== 200 || fontState.endpoint700.bytes < 10000) fail(`RIVA 700 endpoint invalid: ${JSON.stringify(fontState.endpoint700)}`);
+    if (!fontState.regular) fail(`RIVA IRANYekan regular font did not load${fontState.loadError ? `: ${fontState.loadError}` : ""}`);
+    if (!fontState.bold) fail(`RIVA IRANYekanLoginBold font did not load${fontState.loadError ? `: ${fontState.loadError}` : ""}`);
     if (!fontState.bodyFamily.includes("IRANYekan")) fail(`body is not using RIVA font: ${fontState.bodyFamily}`);
 
     const dimensions = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth }));
@@ -146,7 +166,7 @@ try {
 
     const fontState = await brandFontState(page);
     report.brand.desktop = fontState;
-    if (!fontState.regular || !fontState.bold) fail("RIVA fonts are not loaded on desktop");
+    if (!fontState.regular || !fontState.bold) fail(`RIVA fonts are not loaded on desktop${fontState.loadError ? `: ${fontState.loadError}` : ""}`);
 
     const dimensions = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth }));
     report.desktop.dimensions = dimensions;
