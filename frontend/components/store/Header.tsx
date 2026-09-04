@@ -67,7 +67,7 @@ export default function Header({
               }}
             >
               <img
-                src="/persian-shop-logo.svg"
+                src="/persian-shop-brand-v4.svg"
                 alt={`${shopName} logo`}
                 width={48}
                 height={48}
