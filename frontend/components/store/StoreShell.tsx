@@ -18,7 +18,8 @@ import type { CartLine } from "./types";
 import { SectionHeading } from "./shared";
 
 export default function StoreShell({ data }: { data: StoreData }) {
-  const { categories, products, settings } = data;
+  const [storeData, setStoreData] = useState(data);
+  const { categories, products, settings } = storeData;
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(false);
@@ -66,6 +67,48 @@ export default function StoreShell({ data }: { data: StoreData }) {
     } catch {}
     void refreshAuth();
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const refreshCatalog = async () => {
+      if (document.visibilityState === "hidden") return;
+      try {
+        const response = await fetch("/api/store/catalog", { cache: "no-store" });
+        if (!response.ok) return;
+        const next = await response.json() as StoreData;
+        if (!cancelled && Array.isArray(next.products) && Array.isArray(next.categories)) {
+          setStoreData(next);
+        }
+      } catch {}
+    };
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void refreshCatalog();
+    };
+    const timer = window.setInterval(() => void refreshCatalog(), 60_000);
+    window.addEventListener("focus", refreshCatalog);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshCatalog);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, []);
+
+  useEffect(() => {
+    const latestById = new Map(products.map(product => [String(product.id), product]));
+    setCart(current => {
+      let changed = false;
+      const synchronized = current.map(line => {
+        const latest = latestById.get(String(line.product.id));
+        if (!latest || (latest.price === line.product.price && latest.name === line.product.name && latest.image === line.product.image)) return line;
+        changed = true;
+        return { ...line, product: latest };
+      });
+      return changed ? synchronized : current;
+    });
+    setSelected(current => current ? products.find(product => String(product.id) === String(current.id)) || current : null);
+  }, [products]);
 
   useEffect(() => { try { localStorage.setItem("persian-shop-cart-v4", JSON.stringify(cart)); } catch {} }, [cart]);
   useEffect(() => { try { localStorage.setItem("persian-shop-favs-v4", JSON.stringify(favorites)); } catch {} }, [favorites]);
