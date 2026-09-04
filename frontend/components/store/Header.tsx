@@ -52,7 +52,28 @@ export default function Header({
       <header className="site-header">
         <div className="page-container header-primary-row">
           <button className="brand-logo" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Persian Shop">
-            <span className="brand-logo-image"><img src="/persian-shop-logo.svg" alt=""/></span>
+            <span
+              className="brand-logo-image"
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: "50%",
+                overflow: "hidden",
+                flex: "0 0 48px",
+                display: "grid",
+                placeItems: "center",
+                background: "#f6c91f",
+                boxShadow: "0 6px 18px rgba(207,157,0,.18)",
+              }}
+            >
+              <img
+                src="/persian-shop-logo.svg"
+                alt={`${shopName} logo`}
+                width={48}
+                height={48}
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              />
+            </span>
             <span className="brand-logo-copy"><b>{shopName}</b><small>Digital Marketplace</small></span>
           </button>
 
