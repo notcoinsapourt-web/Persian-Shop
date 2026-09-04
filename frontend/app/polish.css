@@ -1,0 +1,130 @@
+/* V4 polish gate: readability, touch targets and overlay behavior */
+body:has(.modal-backdrop),
+body:has(.drawer-backdrop),
+body:has(.catalog-layer),
+body:has(.search-overlay-backdrop){overflow:hidden}
+
+@media(max-width:700px){
+  .mobile-category-scroll button{font-size:9.5px;line-height:1.45}
+  .hero-eyebrow{font-size:9.5px}
+  .hero-copy p{font-size:11px;line-height:1.95}
+  .hero-actions .button{font-size:10.5px}
+  .hero-benefits{font-size:9.5px;line-height:1.6}
+
+  .quick-actions-panel b{font-size:10.5px}
+  .quick-actions-panel small{font-size:9px}
+
+  .section-heading h2{font-size:17px}
+  .section-heading p{font-size:9.5px;line-height:1.85}
+  .text-action{font-size:9.5px;min-height:36px}
+
+  .special-copy h2{font-size:14px}
+  .special-copy p{font-size:8.5px}
+  .special-product-copy b{font-size:9.5px;height:35px;line-height:1.85}
+  .special-product-copy small{font-size:8.5px}
+  .special-product-copy strong{font-size:9.5px}
+  .special-all{font-size:9.5px}
+
+  .campaign-card small,.campaign-card em{font-size:8.5px}
+  .campaign-card b{font-size:13px}
+  .campaign-card p{font-size:9px;line-height:1.75}
+
+  .category-showcase-grid b{font-size:9.5px;line-height:1.6}
+  .category-showcase-grid small{font-size:8.5px}
+
+  .product-card-title{font-size:11.5px;height:44px;line-height:1.85}
+  .availability-row{font-size:9px}
+  .product-card-footer strong{font-size:10.5px}
+  .product-order-button{font-size:9.5px;min-width:34px}
+  .wallet-promo b{font-size:11px}
+  .wallet-promo p{font-size:9px;line-height:1.85}
+  .wallet-promo .button{font-size:10px}
+
+  .editorial-guide-grid b{font-size:11px}
+  .editorial-guide-grid p{font-size:9.5px;line-height:1.85}
+  .faq-list summary{font-size:11px}
+  .faq-list p{font-size:9.5px;line-height:1.95}
+
+  .footer-brand p{font-size:9px}
+  .footer-grid>div>b{font-size:10px}
+  .footer-grid button{font-size:9px;min-height:28px}
+  .footer-bottom{font-size:8.5px}
+
+  .catalog-topbar-title b{font-size:13px}
+  .catalog-topbar-title small{font-size:8.5px}
+  .catalog-search input{font-size:11px}
+  .catalog-mobile-categories b{font-size:8.5px}
+  .catalog-content-header h1{font-size:15px}
+  .catalog-content-header p{font-size:8.5px}
+  .sort-control select{font-size:8.5px}
+  .category-intro-card b{font-size:10px}
+  .category-intro-card p{font-size:8.5px;line-height:1.8}
+  .catalog-filter-summary{font-size:8.5px}
+
+  .product-breadcrumb{font-size:8.5px}
+  .product-detail-status{font-size:9px}
+  .product-sheet-content h2{font-size:17px}
+  .product-sheet-price{font-size:15px}
+  .product-description h3{font-size:11px}
+  .product-description p{font-size:9.5px;line-height:1.9}
+  .order-input-block b{font-size:11px}
+  .order-input-block small{font-size:9px}
+  .order-input-block textarea{font-size:10px;line-height:1.8}
+  .product-note p{font-size:8.5px}
+  .add-to-cart-button{font-size:11px}
+  .buy-total small{font-size:8.5px}
+  .buy-total strong{font-size:12px}
+  .info-badge,.trust-point{font-size:8.5px}
+
+  .drawer-header b{font-size:14px}
+  .drawer-header small{font-size:9px}
+  .cart-item-content>b{font-size:10px}
+  .cart-item-content>small{font-size:8.5px}
+  .cart-item-content>strong{font-size:10px}
+  .cart-checkout-note{font-size:8.5px;line-height:1.9}
+
+  .account-hero-card h2{font-size:16px}
+  .account-hero-card p{font-size:9px;line-height:1.9}
+  .account-login-card label>span{font-size:10px}
+  .account-phone-input input{font-size:10.5px}
+  .account-backend-note{font-size:8.5px}
+  .account-section-title b{font-size:11px}
+  .account-section-title small{font-size:8.5px}
+  .account-quick-grid b{font-size:10px}
+  .account-quick-grid small{font-size:8.5px}
+  .account-local-card b{font-size:10px}
+  .account-local-card p{font-size:8.5px}
+  .help-hint span{font-size:8.5px;line-height:1.9}
+
+  .wallet-overview-brand b{font-size:14px}
+  .wallet-overview-brand small{font-size:8.5px}
+  .wallet-balance-placeholder small,.wallet-balance-placeholder span{font-size:8px}
+  .wallet-overview-status span{font-size:8.5px}
+  .wallet-stepper b{font-size:8px}
+  .wallet-stage-head b{font-size:11px}
+  .wallet-stage-head small{font-size:8.5px}
+  .wallet-quick-amounts button{font-size:9.5px;min-height:42px}
+  .wallet-method-list b{font-size:10px}
+  .wallet-method-list small{font-size:8.5px}
+  .wallet-payment-title b{font-size:11px}
+  .wallet-payment-title small{font-size:8.5px}
+  .wallet-copy-row small,.wallet-info-row small{font-size:8.5px}
+  .wallet-copy-row b,.wallet-info-row b{font-size:10px}
+  .wallet-payment-description,.wallet-rate-note span,.wallet-backend-warning span{font-size:8.5px;line-height:1.85}
+  .wallet-receipt-header b{font-size:11px}
+  .wallet-receipt-header p{font-size:8.5px}
+  .receipt-upload-box b{font-size:10px}
+  .receipt-upload-box small{font-size:8.5px}
+  .wallet-final-summary small{font-size:8.5px}
+  .wallet-final-summary b{font-size:10px}
+
+  .mobile-bottom-nav button{font-size:8.5px;min-height:48px}
+  .store-toast{font-size:9px}
+}
+
+@media(min-width:701px){
+  .product-card-title{font-size:12.5px}
+  .product-card-footer strong{font-size:12.5px}
+  .category-showcase-grid b{font-size:11.5px}
+  .desktop-categories button,.nav-utility,.categories-trigger{font-size:11.5px}
+}
