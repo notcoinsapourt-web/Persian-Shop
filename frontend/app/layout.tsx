@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 import "./polish.css";
+import "./account.css";
 
 export const metadata: Metadata = {
   title: "Persian Shop | فروشگاه خدمات دیجیتال",
