@@ -11,6 +11,8 @@ export default function Header({
   query,
   cartCount,
   searchFocused,
+  isLoggedIn,
+  accountLabel,
   onQuery,
   onSearchFocus,
   onSearchSubmit,
@@ -26,6 +28,8 @@ export default function Header({
   query: string;
   cartCount: number;
   searchFocused: boolean;
+  isLoggedIn: boolean;
+  accountLabel: string;
   onQuery: (value: string) => void;
   onSearchFocus: (focused: boolean) => void;
   onSearchSubmit: () => void;
@@ -41,7 +45,7 @@ export default function Header({
       <div className="announcement-bar">
         <div className="page-container announcement-inner">
           <span>خرید سرویس‌های دیجیتال با قیمت و اطلاعات شفاف</span>
-          <button onClick={onOpenWallet}>افزایش موجودی کیف پول</button>
+          {isLoggedIn ? <button onClick={onOpenWallet}>افزایش موجودی</button> : <button onClick={onOpenAccount}>ورود یا ثبت‌نام</button>}
         </div>
       </div>
 
@@ -54,45 +58,25 @@ export default function Header({
 
           <form className={`global-search ${searchFocused ? "is-focused" : ""}`} onSubmit={event => { event.preventDefault(); onSearchSubmit(); }}>
             <Search size={21}/>
-            <input
-              value={query}
-              onChange={event => onQuery(event.target.value)}
-              onFocus={() => onSearchFocus(true)}
-              placeholder="جستجو در محصولات Persian Shop"
-              aria-label="جستجوی محصولات"
-            />
+            <input value={query} onChange={event => onQuery(event.target.value)} onFocus={() => onSearchFocus(true)} placeholder="جستجو در محصولات Persian Shop" aria-label="جستجوی محصولات"/>
             {query && <button type="button" className="search-clear" onClick={() => onQuery("")} aria-label="پاک کردن جستجو"><X size={17}/></button>}
           </form>
 
           <div className="header-actions">
-            <button className="header-account" onClick={onOpenAccount}><UserRound size={22}/><span>ورود | حساب من</span></button>
-            <button className="header-icon-button" onClick={onOpenCart} aria-label="سبد خرید">
-              <ShoppingCart size={24}/>
-              {cartCount > 0 && <b className="count-badge">{cartCount}</b>}
-            </button>
+            <button className="header-account" onClick={onOpenAccount}><UserRound size={22}/><span>{accountLabel}</span></button>
+            <button className="header-icon-button" onClick={onOpenCart} aria-label="سبد خرید"><ShoppingCart size={24}/>{cartCount > 0 && <b className="count-badge">{cartCount}</b>}</button>
           </div>
         </div>
 
         <div className="page-container desktop-nav-row">
           <button className="categories-trigger" onClick={onOpenCatalog}><Menu size={18}/>دسته‌بندی محصولات<ChevronDown size={15}/></button>
-          <nav className="desktop-categories" aria-label="دسته‌بندی‌های اصلی">
-            {categories.slice(0, 6).map(category => <button key={category.id} onClick={() => onOpenCategory(category.id)}>{shortCategory(category.name)}</button>)}
-          </nav>
+          <nav className="desktop-categories" aria-label="دسته‌بندی‌های اصلی">{categories.slice(0, 6).map(category => <button key={category.id} onClick={() => onOpenCategory(category.id)}>{shortCategory(category.name)}</button>)}</nav>
           <span className="nav-spacer"/>
-          <button className="nav-utility" onClick={onOpenWallet}><WalletCards size={17}/>کیف پول</button>
+          {isLoggedIn && <button className="nav-utility" onClick={onOpenWallet}><WalletCards size={17}/>کیف پول</button>}
           <button className="nav-utility" onClick={onSupport}><Headphones size={17}/>پشتیبانی</button>
         </div>
 
-        <div className="mobile-category-strip">
-          <div className="page-container mobile-category-scroll">
-            {categories.map(category => (
-              <button key={category.id} onClick={() => onOpenCategory(category.id)}>
-                <BrandIcon id={category.id} size={42}/>
-                <span>{shortCategory(category.name)}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+        <div className="mobile-category-strip"><div className="page-container mobile-category-scroll">{categories.map(category => <button key={category.id} onClick={() => onOpenCategory(category.id)}><BrandIcon id={category.id} size={42}/><span>{shortCategory(category.name)}</span></button>)}</div></div>
       </header>
     </>
   );
