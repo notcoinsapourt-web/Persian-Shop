@@ -40,6 +40,7 @@ export default function Header({
   onOpenWallet: () => void;
   onSupport: () => void;
 }) {
+  const brandLogo = "/api/brand/logo?brand=original-v3";
   return (
     <>
       <div className="announcement-bar">
@@ -62,15 +63,16 @@ export default function Header({
                 flex: "0 0 48px",
                 display: "grid",
                 placeItems: "center",
-                background: "transparent",
+                background: "#ffbd08",
                 boxShadow: "0 6px 18px rgba(207,157,0,.18)",
               }}
             >
               <img
-                src="/api/brand/logo"
+                src={brandLogo}
                 alt={`${shopName} logo`}
                 width={48}
                 height={48}
+                decoding="sync"
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
             </span>
