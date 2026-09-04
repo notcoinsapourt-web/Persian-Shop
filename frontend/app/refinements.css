@@ -1,0 +1,315 @@
+/* Persian Shop UI refinement layer — larger type, stronger ecommerce hierarchy */
+
+:root{
+  --ps-yellow:#f6c91f;
+  --ps-yellow-strong:#e7b708;
+  --ps-yellow-soft:#fff9df;
+  --ps-ink:#17191c;
+  --ps-muted:#6f7782;
+  --ps-line:#e5e7eb;
+  --ps-panel:#f7f8fa;
+  --ps-shadow:0 16px 45px rgba(20,24,32,.10);
+  --ps-shadow-soft:0 8px 24px rgba(20,24,32,.07);
+}
+
+body{font-size:14px;line-height:1.75}
+
+/* Global typography and commercial hierarchy */
+.logo b{font-size:18px}
+.searchBox input{font-size:13px}
+.headAction{font-size:12px}
+.navRow button{font-size:11px}
+.quickCategories b{font-size:11px}
+.heroCopy>small{font-size:11px}
+.heroCopy h1{font-size:38px;line-height:1.45}
+.heroCopy p{font-size:13px;line-height:2}
+.primaryDark,.secondaryLight{font-size:11px;padding:12px 18px}
+.heroChips span{font-size:10px}
+.specialLead h2{font-size:22px}
+.specialLead p{font-size:10px}
+.specialLead button{font-size:10px}
+.miniProduct span{font-size:11px;height:42px}
+.miniProduct b{font-size:11px}
+.campaign small{font-size:9px}
+.campaign b{font-size:17px}
+.campaign span{font-size:10px}
+.campaign em{font-size:9px}
+.sectionHeading h2{font-size:20px}
+.sectionHeading p{font-size:10px}
+.sectionHeading>button{font-size:10px}
+.categoryGrid b{font-size:11px}
+.categoryGrid small{font-size:9px}
+.editorialTop h2{font-size:18px}
+.editorialTop p{font-size:9px}
+.editorialTop>button{font-size:10px}
+.productName{font-size:11px;height:42px}
+.productStatus{font-size:9px}
+.productPrice b{font-size:11px}
+.productCta{font-size:9px;padding:8px}
+.inlineWalletBanner b{font-size:11px}
+.inlineWalletBanner small{font-size:9px}
+.inlineWalletBanner button{font-size:9px}
+.trustStrip b{font-size:11px}
+.trustStrip small{font-size:9px}
+.faq summary{font-size:11px}
+.faq p{font-size:10px}
+.footerBrand p,.footerGrid button{font-size:10px}
+.footerGrid>div>b{font-size:11px}
+
+/* More polished surfaces */
+.hero{box-shadow:var(--ps-shadow-soft);border:1px solid rgba(0,0,0,.025)}
+.specialShelf{box-shadow:0 14px 35px rgba(202,153,0,.18)}
+.campaign{box-shadow:var(--ps-shadow-soft);border:1px solid rgba(0,0,0,.03);transition:transform .2s,box-shadow .2s}
+.campaign:hover{transform:translateY(-3px);box-shadow:var(--ps-shadow)}
+.categoryGrid button{box-shadow:0 5px 16px rgba(25,30,40,.035)}
+.editorialBlock{box-shadow:0 7px 22px rgba(25,30,40,.04);background:#fff}
+.productCard{transition:transform .18s,box-shadow .18s}
+.productCard:hover{z-index:2;transform:translateY(-2px);box-shadow:0 10px 25px rgba(25,30,40,.08)}
+.productCta{background:linear-gradient(180deg,#fff9df,#fff4c3);border-color:#efcf57}
+.trustStrip article{background:#fff;box-shadow:0 5px 18px rgba(25,30,40,.035)}
+
+/* Catalog gets a proper ecommerce browsing feel */
+.catalogHeader{height:74px;background:#fff;box-shadow:0 4px 18px rgba(30,34,42,.05);z-index:2}
+.catalogHeader b{font-size:16px}
+.catalogHeader small{font-size:9px}
+.catalogSearch{height:48px;box-shadow:inset 0 0 0 1px #eceef1}
+.catalogSearch input{font-size:12px}
+.catalogBody{grid-template-columns:190px minmax(0,1fr)}
+.catalogSidebar{background:#f6f7f9;padding:10px}
+.catalogSidebar button{padding:11px 10px;border:1px solid transparent}
+.catalogSidebar button b{font-size:10px}
+.catalogSidebar button.active{border-color:#f0d46b;box-shadow:0 6px 18px rgba(40,40,40,.06)}
+.catalogTitle h2{font-size:19px}
+.catalogTitle p{font-size:9px}
+.catalogTitle select{font-size:9px}
+.categoryIntro{padding:15px;background:linear-gradient(135deg,#fffdf5,#f9fafb)}
+.categoryIntro b{font-size:12px}
+.categoryIntro p{font-size:9px}
+
+/* Wallet: clearly separated flow, less like one long form */
+.walletSheet{width:min(790px,calc(100% - 32px));padding:38px;border:1px solid #eceef1}
+.walletSheet .sheetHero{padding:0 0 18px 52px;border-bottom:1px solid #eceef1}
+.walletSheet .sheetHero h2{font-size:22px}
+.walletSheet .sheetHero p{font-size:10px;max-width:500px}
+.walletSheet .sheetIcon{width:60px;height:60px;border-radius:18px;background:linear-gradient(145deg,#fff5bd,#ffe276);box-shadow:0 8px 24px rgba(221,177,0,.16)}
+.walletSheet .steps{margin:20px 0;padding:10px;background:#fafbfc;border-radius:15px}
+.walletSheet .steps span{min-height:40px}
+.walletSheet .steps i{width:28px;height:28px;font-size:9px}
+.walletSheet .steps b{font-size:9px}
+.walletStage{gap:14px;padding-top:2px}
+.amountField>span{font-size:11px;margin-bottom:8px}
+.amountField>div{height:60px;border-radius:14px;background:#fff;box-shadow:inset 0 0 0 1px rgba(0,0,0,.015)}
+.amountField input{font-size:15px;font-weight:700}
+.amountField b{font-size:10px}
+.quickAmounts{gap:9px}
+.quickAmounts button{font-size:10px;padding:10px 5px;background:#fff;border-radius:11px;font-weight:700}
+.quickAmounts button:hover{background:var(--ps-yellow-soft);border-color:#e8c84f}
+.stageNotice{padding:13px;border:1px solid #eceef1;background:#fafbfc}
+.stageNotice span{font-size:9px;line-height:2}
+.sheetPrimary{min-height:48px;font-size:11px;border-radius:12px;box-shadow:0 8px 18px rgba(218,168,0,.16)}
+.amountSummary{padding:13px 14px;border:1px solid #eceef1;background:#fafbfc}
+.amountSummary span{font-size:9px}
+.amountSummary b{font-size:13px}
+.amountSummary button{font-size:8px}
+.paymentMethods{gap:11px}
+.paymentMethods>button{min-height:104px;padding:16px;border-radius:15px;box-shadow:0 5px 16px rgba(25,30,40,.03);transition:.2s}
+.paymentMethods>button:hover{transform:translateY(-2px);box-shadow:var(--ps-shadow-soft)}
+.paymentMethods b{font-size:12px}
+.paymentMethods small{font-size:8px}
+.methodIcon{width:50px;height:50px;border-radius:14px}
+.paymentReceiptHead{padding:2px 0 14px}
+.paymentReceiptHead small{font-size:9px}
+.paymentReceiptHead b{font-size:17px}
+.paymentReceiptHead button{font-size:8px}
+.paymentCard{padding:16px;border-radius:16px;background:#fff;box-shadow:0 8px 24px rgba(25,30,40,.045)}
+.paymentTitle b{font-size:12px}
+.paymentTitle small{font-size:8px}
+.copyRow,.infoRow{padding:12px 13px;border-radius:12px}
+.copyRow small,.infoRow small{font-size:8px}
+.copyRow b,.infoRow b{font-size:11px}
+.copyRow .address{font-size:9px}
+.paymentHint{font-size:9px;line-height:2.1;background:#fafbfc;border-radius:10px;padding:10px;margin-top:10px}
+.receiptStep{padding:13px;border-radius:13px}
+.receiptStep b{font-size:10px}
+.receiptStep p{font-size:9px;line-height:2}
+
+/* Account: task-oriented dashboard, clearer visual grouping */
+.accountSheet:not(.walletSheet){width:min(760px,calc(100% - 32px));padding:38px;border:1px solid #eceef1}
+.accountSheet:not(.walletSheet) .sheetHero{padding:0 0 18px 52px;border-bottom:1px solid #eceef1}
+.accountSheet:not(.walletSheet) .sheetHero h2{font-size:22px}
+.accountSheet:not(.walletSheet) .sheetHero p{font-size:10px;max-width:510px}
+.accountSheet:not(.walletSheet) .sheetIcon{width:60px;height:60px;border-radius:18px}
+.profileForm{margin-top:20px;gap:14px}
+.profileForm label>span{font-size:11px;margin-bottom:7px}
+.profileForm input{height:56px;font-size:12px;border-radius:13px;background:#fff}
+.profileForm input:focus{border-color:#e1bc30;box-shadow:0 0 0 4px rgba(246,201,31,.10)}
+.profileInfo{padding:12px 13px;border:1px solid #eceef1}
+.profileInfo span{font-size:9px;line-height:2}
+.accountDashboardHead{padding:0 0 18px 52px;border-bottom:1px solid #eceef1}
+.avatar{width:66px;height:66px;border-radius:20px;font-size:24px;box-shadow:0 8px 20px rgba(213,164,0,.18)}
+.accountDashboardHead h2{font-size:20px}
+.accountDashboardHead p{font-size:10px}
+.accountDashboardHead>button{font-size:9px;padding:9px 11px}
+.accountStats{gap:10px;margin:18px 0}
+.accountStats button{min-height:78px;padding:14px;border-radius:14px;background:linear-gradient(180deg,#fff,#fafbfc);box-shadow:0 5px 18px rgba(25,30,40,.035)}
+.accountStats b{font-size:14px}
+.accountStats small{font-size:9px}
+.accountMenu{border-radius:14px;box-shadow:0 5px 18px rgba(25,30,40,.035)}
+.accountMenu>button{padding:14px}
+.accountMenu b{font-size:11px}
+.recentOrders{margin-top:20px;border:1px solid #eceef1;border-radius:14px;padding:14px}
+.recentOrdersTitle{margin-bottom:6px}
+.recentOrdersTitle b{font-size:11px}
+.recentOrdersTitle small{font-size:8px}
+.recentOrders article{padding:11px 2px}
+.recentOrders article b{font-size:9px}
+.recentOrders article small{font-size:8px}
+.ordersEmpty{min-height:64px}
+.ordersEmpty span{font-size:9px}
+
+/* Cart / product detail readability */
+.productInfo>small{font-size:9px}
+.productInfo h2{font-size:22px}
+.productInfo>p{font-size:10px}
+.productPoints span{font-size:9px}
+.orderInputLabel>b{font-size:11px}
+.orderInputLabel>small{font-size:9px}
+.orderInputLabel textarea{font-size:10px}
+.buyPrice small{font-size:8px}
+.buyPrice b{font-size:13px}
+.addButton{font-size:10px}
+.drawerHeader b{font-size:15px}
+.drawerHeader small{font-size:9px}
+.cartLine>div:nth-child(2)>b{font-size:10px}
+.cartLine>div:nth-child(2)>small{font-size:8px}
+.cartLine strong{font-size:10px}
+.cartSummary span{font-size:10px}
+.cartSummary b{font-size:14px}
+.cartSummary>button{font-size:10px}
+.toast{font-size:10px;padding:10px 15px}
+
+@media(max-width:640px){
+  body{font-size:14px}
+  .logo b{font-size:16px}
+  .searchBox input{font-size:12px}
+  .quickCategories b{font-size:9px}
+
+  .hero{min-height:270px;padding:24px 20px}
+  .heroCopy>small{font-size:8px}
+  .heroCopy h1{font-size:21px;line-height:1.55}
+  .heroCopy p{font-size:9.5px;line-height:2}
+  .primaryDark,.secondaryLight{font-size:8.5px;padding:9px 11px}
+  .heroChips span{font-size:7px}
+
+  .specialLead h2{font-size:14px}
+  .specialLead p{font-size:7px}
+  .specialLead button{font-size:7px}
+  .miniProduct span{font-size:8px;height:32px}
+  .miniProduct b{font-size:8px}
+  .campaign b{font-size:12px}
+  .campaign span,.campaign small,.campaign em{font-size:7px}
+
+  .sectionHeading h2{font-size:15px}
+  .sectionHeading p{font-size:8px;line-height:1.8}
+  .sectionHeading>button{font-size:8px}
+  .categoryGrid b{font-size:8px}
+  .categoryGrid small{font-size:7px}
+  .editorialTop h2{font-size:13px}
+  .editorialTop p{font-size:7px}
+  .editorialTop>button{font-size:7px}
+  .productName{font-size:8.5px;height:35px}
+  .productStatus{font-size:7px}
+  .productPrice b{font-size:8.5px}
+  .productCta{font-size:7px;padding:7px}
+  .inlineWalletBanner b{font-size:8px}
+  .inlineWalletBanner small{font-size:7px}
+  .inlineWalletBanner button{font-size:7px}
+  .trustStrip b{font-size:8px}
+  .trustStrip small{font-size:7px}
+  .faq summary{font-size:9px}
+  .faq p{font-size:8px}
+
+  .catalogHeader b{font-size:13px}
+  .catalogHeader small{font-size:7px}
+  .catalogSearch input{font-size:10px}
+  .catalogSidebar button b{font-size:7px}
+  .catalogTitle h2{font-size:13px}
+  .catalogTitle p,.catalogTitle select{font-size:7px}
+  .categoryIntro b{font-size:9px}
+  .categoryIntro p{font-size:7px}
+
+  /* Mobile account behaves like a commerce dashboard, not a plain modal */
+  .accountSheet:not(.walletSheet),.walletSheet{padding:24px 18px 24px;max-height:93vh;border-radius:22px 22px 0 0}
+  .accountSheet:not(.walletSheet) .sheetHero,.walletSheet .sheetHero{padding:0 0 15px 42px}
+  .accountSheet:not(.walletSheet) .sheetHero h2,.walletSheet .sheetHero h2{font-size:17px}
+  .accountSheet:not(.walletSheet) .sheetHero p,.walletSheet .sheetHero p{font-size:8.5px;line-height:1.9}
+  .accountSheet:not(.walletSheet) .sheetIcon,.walletSheet .sheetIcon{width:52px;height:52px;border-radius:16px}
+
+  .profileForm label>span{font-size:10px}
+  .profileForm input{height:52px;font-size:11px}
+  .profileInfo span{font-size:8px}
+  .sheetPrimary{font-size:9.5px;min-height:46px}
+
+  .accountDashboardHead{padding:0 0 15px 42px}
+  .avatar{width:54px;height:54px;border-radius:17px;font-size:20px}
+  .accountDashboardHead h2{font-size:15px}
+  .accountDashboardHead p{font-size:8.5px}
+  .accountDashboardHead>button{font-size:8px}
+  .accountStats{grid-template-columns:1fr 1fr 1fr;gap:7px;margin:14px 0}
+  .accountStats button{min-height:72px;padding:10px 8px;align-items:flex-start}
+  .accountStats b{font-size:11px}
+  .accountStats small{font-size:7.5px}
+  .accountMenu>button{padding:13px 12px}
+  .accountMenu b{font-size:9px}
+  .recentOrders{margin-top:14px;padding:11px}
+  .recentOrdersTitle b{font-size:9px}
+  .recentOrdersTitle small{font-size:7px}
+  .recentOrders article b{font-size:8px}
+  .recentOrders article small,.ordersEmpty span{font-size:7px}
+
+  /* Wallet mobile */
+  .walletSheet .steps{margin:14px 0 12px;padding:7px}
+  .walletSheet .steps b{font-size:7px}
+  .walletSheet .steps i{width:23px;height:23px;font-size:7px}
+  .amountField>span{font-size:9.5px}
+  .amountField>div{height:52px}
+  .amountField input{font-size:13px}
+  .amountField b{font-size:8px}
+  .quickAmounts button{font-size:8px;padding:9px 5px}
+  .stageNotice span{font-size:8px}
+  .paymentMethods>button{min-height:82px;padding:12px}
+  .paymentMethods b{font-size:10px}
+  .paymentMethods small{font-size:7px}
+  .methodIcon{width:45px;height:45px}
+  .paymentReceiptHead small{font-size:8px}
+  .paymentReceiptHead b{font-size:13px}
+  .paymentCard{padding:12px}
+  .paymentTitle b{font-size:10px}
+  .paymentTitle small{font-size:7px}
+  .copyRow small,.infoRow small{font-size:7px}
+  .copyRow b,.infoRow b{font-size:9px}
+  .copyRow .address{font-size:7.5px}
+  .paymentHint{font-size:8px}
+  .receiptStep b{font-size:9px}
+  .receiptStep p{font-size:8px}
+
+  .productInfo h2{font-size:16px}
+  .productInfo>p{font-size:8.5px}
+  .productPoints span{font-size:7px}
+  .orderInputLabel>b{font-size:9px}
+  .orderInputLabel>small{font-size:7px}
+  .orderInputLabel textarea{font-size:9px}
+  .buyPrice b{font-size:10px}
+  .addButton{font-size:9px}
+  .drawerHeader b{font-size:13px}
+  .drawerHeader small{font-size:8px}
+  .cartLine>div:nth-child(2)>b{font-size:9px}
+  .cartLine>div:nth-child(2)>small{font-size:7px}
+  .cartLine strong{font-size:9px}
+  .cartSummary span{font-size:9px}
+  .cartSummary b{font-size:12px}
+  .cartSummary>button{font-size:9px}
+
+  .mobileBottom button{font-size:7.5px}
+  .toast{font-size:8.5px}
+}
