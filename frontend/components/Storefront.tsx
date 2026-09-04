@@ -1,133 +1,700 @@
 "use client";
 
-import { FormEvent,useEffect,useMemo,useState } from "react";
-import type { StoreCategory,StoreData,StoreProduct } from "../lib/store-data";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import type { StoreCategory, StoreData, StoreProduct } from "../lib/store-data";
 
-type CartLine={product:StoreProduct;qty:number;input:string};
-type Profile={name:string;mobile:string};
-type IconName="home"|"grid"|"search"|"user"|"cart"|"wallet"|"headset"|"heart"|"chevron"|"menu"|"shield"|"bolt"|"bag"|"star"|"copy"|"trash"|"plus"|"minus"|"close"|"sort"|"check"|"orders"|"telegram"|"sparkle";
+type CartLine = { product: StoreProduct; qty: number; input: string };
+type Profile = { name: string; mobile: string };
+type LocalOrder = { ref: string; total: number; count: number; createdAt: string };
+type WalletMethod = "card" | "crypto";
+type IconName =
+  | "home" | "grid" | "search" | "user" | "cart" | "wallet" | "headset"
+  | "heart" | "chevron" | "menu" | "shield" | "bolt" | "copy" | "trash"
+  | "plus" | "minus" | "close" | "check" | "orders" | "edit" | "clock";
 
-const money=(n:number)=>new Intl.NumberFormat("fa-IR").format(n)+" تومان";
-const digits=(s:string)=>s.replace(/\D/g,"").replace(/(.{4})/g,"$1 ").trim();
-const catAccent:Record<string,string>={telegram:"#229ED9",instagram:"#E64980",tiktok:"#171717",youtube:"#FF334B",ai:"#6558F5",digital:"#F59E0B",social:"#0EA5E9"};
+const money = (n: number) => new Intl.NumberFormat("fa-IR").format(Math.max(0, Math.round(n))) + " تومان";
 
-export default function Storefront({data}:{data:StoreData}){
- const {categories,products,settings}=data;
- const [query,setQuery]=useState(""),[category,setCategory]=useState("all"),[selected,setSelected]=useState<StoreProduct|null>(null),[qty,setQty]=useState(1),[input,setInput]=useState(""),[cart,setCart]=useState<CartLine[]>([]),[cartOpen,setCartOpen]=useState(false),[walletOpen,setWalletOpen]=useState(false),[accountOpen,setAccountOpen]=useState(false),[supportOpen,setSupportOpen]=useState(false),[toast,setToast]=useState(""),[sort,setSort]=useState<"popular"|"low"|"high">("popular"),[profile,setProfile]=useState<Profile>({name:"",mobile:""}),[favorites,setFavorites]=useState<string[]>([]),[walletAmount,setWalletAmount]=useState(""),[checkoutDone,setCheckoutDone]=useState(""),[hero,setHero]=useState(0),[mobileMenu,setMobileMenu]=useState(false);
+const faToEn = (value: string) =>
+  value
+    .replace(/[۰-۹]/g, d => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)))
+    .replace(/[٠-٩]/g, d => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));
 
- useEffect(()=>{try{const c=localStorage.getItem("persian-shop-cart");if(c)setCart(JSON.parse(c));const p=localStorage.getItem("persian-shop-profile");if(p)setProfile(JSON.parse(p));const f=localStorage.getItem("persian-shop-favs");if(f)setFavorites(JSON.parse(f));}catch{}},[]);
- useEffect(()=>{try{localStorage.setItem("persian-shop-cart",JSON.stringify(cart))}catch{}},[cart]);
- useEffect(()=>{try{localStorage.setItem("persian-shop-favs",JSON.stringify(favorites))}catch{}},[favorites]);
- useEffect(()=>{const id=window.setInterval(()=>setHero(v=>(v+1)%3),5200);return()=>window.clearInterval(id)},[]);
+const parseAmount = (value: string) => Number(faToEn(value).replace(/\D/g, "")) || 0;
 
- const filtered=useMemo(()=>{let list=products.filter(p=>(category==="all"||p.category===category)&&(!query||`${p.name} ${p.en} ${p.description}`.toLowerCase().includes(query.toLowerCase())));if(sort==="low")list=[...list].sort((a,b)=>a.price-b.price);if(sort==="high")list=[...list].sort((a,b)=>b.price-a.price);return list},[products,category,query,sort]);
- const cartCount=cart.reduce((s,x)=>s+x.qty,0),cartTotal=cart.reduce((s,x)=>s+x.product.price*x.qty,0);
- const featured=products.slice(0,12);
- const telegram=products.filter(p=>p.category==="telegram").slice(0,10);
- const instagram=products.filter(p=>p.category==="instagram").slice(0,10);
- const ai=products.filter(p=>p.category==="ai").slice(0,10);
- const digital=products.filter(p=>p.category==="digital").slice(0,10);
- const video=products.filter(p=>["tiktok","youtube"].includes(p.category)).slice(0,10);
- const social=products.filter(p=>["instagram","telegram","tiktok","youtube"].includes(p.category)).slice(0,10);
- const heroSlides=[
-  {eyebrow:"فروشگاه خدمات دیجیتال",title:"خرید سریع سرویس‌های شبکه اجتماعی",desc:"تلگرام، اینستاگرام، تیک‌تاک و یوتیوب با قیمت‌های به‌روز فروشگاه",cat:"telegram",tone:"heroYellow",items:telegram.slice(0,2)},
-  {eyebrow:"مجموعه تخصصی هوش مصنوعی",title:"اشتراک ابزارهای AI در یک فروشگاه",desc:"ChatGPT، Claude و سرویس‌های هوش مصنوعی فعال فروشگاه",cat:"ai",tone:"heroMint",items:ai.slice(0,2)},
-  {eyebrow:"اکانت و اشتراک پرمیوم",title:"محصولات دیجیتال و پرمیوم",desc:"اشتراک‌ها و سرویس‌های منتخب با ثبت سفارش ساده و پشتیبانی",cat:"digital",tone:"heroLavender",items:digital.slice(0,2)}
- ];
- const currentHero=heroSlides[hero]||heroSlides[0];
+const cardFormat = (value: string) =>
+  faToEn(value).replace(/\D/g, "").replace(/(.{4})/g, "$1 ").trim();
 
- const notify=(m:string)=>{setToast(m);window.setTimeout(()=>setToast(""),1800)};
- const openProduct=(p:StoreProduct)=>{setSelected(p);setQty(1);setInput("")};
- const add=(e?:FormEvent)=>{e?.preventDefault();if(!selected)return;setCart(v=>{const i=v.findIndex(x=>x.product.slug===selected.slug&&x.input===input);if(i<0)return [...v,{product:selected,qty,input}];const copy=[...v];copy[i]={...copy[i],qty:copy[i].qty+qty};return copy});setSelected(null);notify("محصول به سبد خرید اضافه شد")};
- const toggleFav=(slug:string)=>setFavorites(v=>v.includes(slug)?v.filter(x=>x!==slug):[...v,slug]);
- const selectCat=(id:string)=>{setCategory(id);setMobileMenu(false);window.setTimeout(()=>document.getElementById("products")?.scrollIntoView({behavior:"smooth",block:"start"}),30)};
- const scrollHome=()=>window.scrollTo({top:0,behavior:"smooth"});
- const copy=async(text:string,label:string)=>{if(!text)return;try{await navigator.clipboard.writeText(text);notify(`${label} کپی شد`)}catch{notify("امکان کپی خودکار وجود ندارد")}};
- const saveProfile=(e:FormEvent)=>{e.preventDefault();try{localStorage.setItem("persian-shop-profile",JSON.stringify(profile))}catch{}setAccountOpen(false);notify("اطلاعات حساب ذخیره شد")};
- const finishCheckout=()=>{if(!cart.length)return;const ref=`PS-${Date.now().toString().slice(-8)}`;setCheckoutDone(ref);setCart([]);notify("درخواست سفارش ثبت شد")};
- const openSupport=()=>{const username=settings.supportUsername?.replace(/^@/,"");if(username)window.open(`https://t.me/${username}`,"_blank");else setSupportOpen(true)};
- const updateCartQty=(i:number,delta:number)=>setCart(v=>v.flatMap((x,n)=>n===i?(x.qty+delta>0?[{...x,qty:x.qty+delta}]:[]):[x]));
- const firstImage=(id:string)=>products.find(p=>p.category===id)?.image||"";
+const cleanTelegramText = (value: string) =>
+  String(value || "")
+    .replace(/<tg-emoji[^>]*>/gi, "")
+    .replace(/<\/tg-emoji>/gi, "")
+    .replace(/&lt;tg-emoji[^&]*&gt;/gi, "")
+    .replace(/&lt;\/tg-emoji&gt;/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
- return <main className="shop">
-  <div className="topCampaign"><div className="container"><span><Icon name="bolt" size={15}/> خرید سریع سرویس‌های دیجیتال</span><button onClick={()=>setWalletOpen(true)}>شارژ کیف پول</button></div></div>
+const brandColor = (id: string) => ({
+  telegram: "#229ED9",
+  instagram: "#E4405F",
+  tiktok: "#111111",
+  youtube: "#FF0033",
+  ai: "#5B5BD6",
+  digital: "#EAA514",
+  social: "#0EA5E9",
+}[id] || "#E4B415");
 
-  <header className="header">
-   <div className="container headerMain">
-    <button className="logo" onClick={scrollHome} aria-label="صفحه اصلی"><span className="logoMark">P</span><span><b>{settings.shopName}</b><small>Digital Store</small></span></button>
-    <label className="searchBox"><Icon name="search" size={20}/><input value={query} onChange={e=>setQuery(e.target.value)} onFocus={()=>query&&document.getElementById("products")?.scrollIntoView({behavior:"smooth"})} placeholder="جستجو در محصولات Persian Shop"/>{query&&<button type="button" onClick={()=>setQuery("")}><Icon name="close" size={17}/></button>}</label>
-    <div className="headActions"><button className="loginBtn" onClick={()=>setAccountOpen(true)}><Icon name="user" size={19}/><span>{profile.name||"ورود | ثبت‌نام"}</span></button><button className="iconBtn" onClick={()=>setCartOpen(true)} aria-label="سبد خرید"><Icon name="cart" size={23}/>{cartCount>0&&<b>{cartCount}</b>}</button></div>
-   </div>
-   <div className="container navRow"><button className="mega" onClick={()=>setMobileMenu(v=>!v)}><Icon name="menu" size={18}/> دسته‌بندی کالاها</button>{categories.slice(0,6).map(c=><button key={c.id} onClick={()=>selectCat(c.id)}>{c.name}</button>)}<span/><button onClick={()=>setWalletOpen(true)}><Icon name="wallet" size={16}/> کیف پول</button><button onClick={openSupport}><Icon name="headset" size={16}/> پشتیبانی</button></div>
-  </header>
+export default function Storefront({ data }: { data: StoreData }) {
+  const { categories, products, settings } = data;
 
-  {mobileMenu&&<div className="megaPanel"><div className="container">{categories.map(c=><button key={c.id} onClick={()=>selectCat(c.id)}><CategoryVisual category={c} image={firstImage(c.id)}/><span><b>{c.name}</b><small>{c.count} محصول</small></span><Icon name="chevron" size={16}/></button>)}</div></div>}
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("all");
+  const [sort, setSort] = useState<"popular" | "low" | "high">("popular");
+  const [catalogOpen, setCatalogOpen] = useState(false);
 
-  <section className="container quickServices" aria-label="دسترسی سریع">{categories.slice(0,7).map(c=><button key={c.id} onClick={()=>selectCat(c.id)}><CategoryVisual category={c} image={firstImage(c.id)}/><b>{shortCategory(c.name)}</b></button>)}<button onClick={openSupport}><span className="quickCircle supportCircle"><Icon name="headset" size={25}/></span><b>پشتیبانی</b></button></section>
+  const [selected, setSelected] = useState<StoreProduct | null>(null);
+  const [qty, setQty] = useState(1);
+  const [input, setInput] = useState("");
 
-  <section className={`container heroSlider ${currentHero.tone}`}>
-   <div className="heroText"><span className="heroEyebrow">{currentHero.eyebrow}</span><h1>{currentHero.title}</h1><p>{currentHero.desc}</p><div className="heroActions"><button className="darkAction" onClick={()=>selectCat(currentHero.cat)}>مشاهده محصولات <Icon name="chevron" size={16}/></button><button className="lightAction" onClick={()=>setWalletOpen(true)}>افزایش موجودی</button></div></div>
-   <div className="heroProducts">{currentHero.items.map((p,i)=><button key={p.slug} className={`heroProduct hp${i+1}`} onClick={()=>openProduct(p)}><img src={p.image} alt={p.name}/><span>{p.name}</span></button>)}</div>
-   <div className="heroDots">{heroSlides.map((_,i)=><button key={i} className={hero===i?"on":""} onClick={()=>setHero(i)} aria-label={`اسلاید ${i+1}`}/>)}</div>
-  </section>
+  const [cart, setCart] = useState<CartLine[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>([]);
 
-  <section className="container superDeals"><div className="dealLead"><div className="dealBolt"><Icon name="bolt" size={27}/></div><h2>پیشنهاد شگفت‌انگیز</h2><p>محصولات منتخب با دسترسی سریع</p><button onClick={()=>selectCat("all")}>مشاهده همه <Icon name="chevron" size={14}/></button></div><div className="dealRail">{featured.map((p,i)=><CompactCard key={p.slug} p={p} onOpen={openProduct} badge={i<5?`${12+i*3}%`:undefined}/>)}</div></section>
+  const [profile, setProfile] = useState<Profile>({ name: "", mobile: "" });
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [orders, setOrders] = useState<LocalOrder[]>([]);
 
-  <section className="container adMosaic">
-   <CampaignCard cls="adDark" kicker="کانال و گروه" title="رشد حرفه‌ای تلگرام" text="ممبر، بازدید و تعامل" image={firstImage("telegram")} onClick={()=>selectCat("telegram")}/>
-   <CampaignCard cls="adPink" kicker="رشد پیج" title="خدمات اینستاگرام" text="فالوور، لایک و بازدید" image={firstImage("instagram")} onClick={()=>selectCat("instagram")}/>
-   <CampaignCard cls="adAqua" kicker="AI Collection" title="ابزارهای هوش مصنوعی" text="اشتراک‌های منتخب" image={firstImage("ai")} onClick={()=>selectCat("ai")}/>
-   <CampaignCard cls="adGold" kicker="Premium" title="محصولات دیجیتال" text="اکانت و اشتراک" image={firstImage("digital")} onClick={()=>selectCat("digital")}/>
-  </section>
+  const [walletOpen, setWalletOpen] = useState(false);
+  const [walletStep, setWalletStep] = useState<1 | 2 | 3>(1);
+  const [walletAmount, setWalletAmount] = useState("");
+  const [walletMethod, setWalletMethod] = useState<WalletMethod>("card");
 
-  <section className="container categoryMarket"><div className="sectionTitle centered"><h2>خرید بر اساس دسته‌بندی</h2><p>دسترسی سریع به همه سرویس‌های فروشگاه</p></div><div className="categoryMarketGrid">{categories.map(c=><button key={c.id} onClick={()=>selectCat(c.id)}><CategoryVisual category={c} image={firstImage(c.id)} large/><b>{c.name}</b><span>{c.count} محصول</span></button>)}</div></section>
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [toast, setToast] = useState("");
+  const [hero, setHero] = useState(0);
 
-  <ProductRail title="محبوب‌ترین سرویس‌های تلگرام" subtitle="ممبر، بازدید و تعامل کانال" products={telegram} onOpen={openProduct} onFav={toggleFav} favorites={favorites} onAll={()=>selectCat("telegram")}/>
+  useEffect(() => {
+    try {
+      const c = localStorage.getItem("persian-shop-cart");
+      if (c) setCart(JSON.parse(c));
+      const p = localStorage.getItem("persian-shop-profile");
+      if (p) setProfile(JSON.parse(p));
+      const f = localStorage.getItem("persian-shop-favs");
+      if (f) setFavorites(JSON.parse(f));
+      const o = localStorage.getItem("persian-shop-orders");
+      if (o) setOrders(JSON.parse(o));
+    } catch {}
+  }, []);
 
-  <section className="container widePromo promoAI"><div><small>مجموعه هوش مصنوعی Persian Shop</small><h2>AI Premium Collection</h2><p>اشتراک ابزارهای محبوب هوش مصنوعی در یک ویترین تخصصی</p><button onClick={()=>selectCat("ai")}>مشاهده مجموعه</button></div><div className="promoProductStack">{ai.slice(0,3).map(p=><button key={p.slug} onClick={()=>openProduct(p)}><img src={p.image} alt={p.name}/></button>)}</div></section>
+  useEffect(() => {
+    try { localStorage.setItem("persian-shop-cart", JSON.stringify(cart)); } catch {}
+  }, [cart]);
 
-  <ProductRail title="اشتراک‌های هوش مصنوعی" subtitle="محصولات فعال AI فروشگاه" products={ai} onOpen={openProduct} onFav={toggleFav} favorites={favorites} onAll={()=>selectCat("ai")}/>
-  <ProductRail title="محبوب‌های اینستاگرام" subtitle="سرویس‌های رشد و تعامل پیج" products={instagram} onOpen={openProduct} onFav={toggleFav} favorites={favorites} onAll={()=>selectCat("instagram")}/>
+  useEffect(() => {
+    try { localStorage.setItem("persian-shop-favs", JSON.stringify(favorites)); } catch {}
+  }, [favorites]);
 
-  <section className="container halfPromos"><CampaignCard cls="halfBlack" kicker="TikTok & YouTube" title="سرویس‌های ویدیویی" text="بازدید، لایک و رشد ویدیو" image={video[0]?.image||""} onClick={()=>selectCat("tiktok")}/><CampaignCard cls="halfCream" kicker="Premium Accounts" title="اکانت‌های پرمیوم" text="محصولات دیجیتال منتخب" image={digital[0]?.image||""} onClick={()=>selectCat("digital")}/></section>
+  useEffect(() => {
+    try { localStorage.setItem("persian-shop-orders", JSON.stringify(orders)); } catch {}
+  }, [orders]);
 
-  <ProductRail title="محصولات دیجیتال و پرمیوم" subtitle="اشتراک‌ها و اکانت‌های منتخب" products={digital} onOpen={openProduct} onFav={toggleFav} favorites={favorites} onAll={()=>selectCat("digital")}/>
-  <ProductRail title="سرویس‌های ویدیویی" subtitle="تیک‌تاک و یوتیوب" products={video} onOpen={openProduct} onFav={toggleFav} favorites={favorites} onAll={()=>selectCat("youtube")}/>
+  useEffect(() => {
+    const id = window.setInterval(() => setHero(v => (v + 1) % 3), 5600);
+    return () => window.clearInterval(id);
+  }, []);
 
-  <section id="products" className="container productSection"><div className="productsTitle"><div><h2>{category==="all"?"همه محصولات فروشگاه":categories.find(c=>c.id===category)?.name}</h2><p>{filtered.length} محصول فعال</p></div><div className="sort"><Icon name="sort" size={17}/><span>مرتب‌سازی</span><button className={sort==="popular"?"on":""} onClick={()=>setSort("popular")}>پیشنهادی</button><button className={sort==="low"?"on":""} onClick={()=>setSort("low")}>ارزان‌ترین</button><button className={sort==="high"?"on":""} onClick={()=>setSort("high")}>گران‌ترین</button></div></div><div className="filterChips"><button className={category==="all"?"on":""} onClick={()=>setCategory("all")}>همه</button>{categories.map(c=><button key={c.id} className={category===c.id?"on":""} onClick={()=>setCategory(c.id)}>{c.name}</button>)}</div>{filtered.length?<div className="gridProducts">{filtered.map(p=><ProductCard key={p.slug} p={p} onOpen={openProduct} onFav={toggleFav} fav={favorites.includes(p.slug)}/>)}</div>:<div className="noResult"><Icon name="search" size={30}/><b>محصولی پیدا نشد</b><span>عبارت جستجو یا فیلتر دسته‌بندی را تغییر بده.</span><button onClick={()=>{setQuery("");setCategory("all")}}>پاک کردن فیلترها</button></div>}</section>
+  const filtered = useMemo(() => {
+    let list = products.filter(p =>
+      (category === "all" || p.category === category) &&
+      (!query || `${p.name} ${p.en} ${p.description}`.toLowerCase().includes(query.toLowerCase()))
+    );
+    if (sort === "low") list = [...list].sort((a, b) => a.price - b.price);
+    if (sort === "high") list = [...list].sort((a, b) => b.price - a.price);
+    return list;
+  }, [products, category, query, sort]);
 
-  <section className="container trust"><article><span><Icon name="bolt" size={24}/></span><div><b>ثبت سفارش سریع</b><small>فرآیند ساده و شفاف خرید</small></div></article><article><span><Icon name="shield" size={24}/></span><div><b>امن و بدون پسورد</b><small>اطلاعات حساس حساب دریافت نمی‌شود</small></div></article><article><span><Icon name="wallet" size={24}/></span><div><b>پرداخت منعطف</b><small>کارت‌به‌کارت و USDT</small></div></article><article><span><Icon name="headset" size={24}/></span><div><b>پشتیبانی سفارش</b><small>پیگیری و پاسخگویی</small></div></article></section>
+  const homePlan = useMemo(() => {
+    const used = new Set<string>();
+    const featured: StoreProduct[] = [];
 
-  <section className="container faq"><div className="sectionTitle"><h2>سوالات متداول</h2><p>پاسخ کوتاه به سوالات مهم قبل از خرید</p></div><div className="faqList"><details><summary>برای ثبت سفارش چه اطلاعاتی لازم است؟<Icon name="plus" size={17}/></summary><p>در صفحه هر محصول دقیقاً مشخص شده چه لینکی، ایمیل یا اطلاعاتی لازم است. برای سرویس‌های اجتماعی رمز عبور دریافت نمی‌شود.</p></details><details><summary>قیمت محصولات چگونه به‌روزرسانی می‌شود؟<Icon name="plus" size={17}/></summary><p>قیمت و وضعیت فعال بودن محصول از کاتالوگ اصلی Persian Shop خوانده می‌شود و تغییرات مدیریت در سایت نمایش داده می‌شود.</p></details><details><summary>چطور موجودی کیف پول را افزایش دهم؟<Icon name="plus" size={17}/></summary><p>از بخش کیف پول مبلغ را وارد کن و روش کارت‌به‌کارت یا USDT را انتخاب کن. اطلاعات پرداخت از تنظیمات فروشگاه نمایش داده می‌شود.</p></details><details><summary>برای پیگیری سفارش از کجا اقدام کنم؟<Icon name="plus" size={17}/></summary><p>از دکمه پشتیبانی در هدر یا نوار پایین موبایل وارد بخش پشتیبانی شو.</p></details></div></section>
+    for (const c of categories) {
+      const p = products.find(x => x.category === c.id && !used.has(x.slug));
+      if (p) {
+        featured.push(p);
+        used.add(p.slug);
+      }
+    }
 
-  <footer className="footer"><div className="container footerTop"><div className="footerBrand"><button className="logo" onClick={scrollHome}><span className="logoMark">P</span><span><b>{settings.shopName}</b><small>Digital Store</small></span></button><p>فروشگاه تخصصی خدمات شبکه‌های اجتماعی، هوش مصنوعی و اشتراک‌های دیجیتال.</p></div><div><b>خدمات مشتریان</b><button onClick={openSupport}>پشتیبانی</button><button onClick={()=>setWalletOpen(true)}>افزایش موجودی</button><button onClick={()=>setAccountOpen(true)}>حساب کاربری</button></div><div><b>دسترسی سریع</b><button onClick={()=>selectCat("all")}>همه محصولات</button>{categories.slice(0,3).map(c=><button key={c.id} onClick={()=>selectCat(c.id)}>{c.name}</button>)}</div><div><b>Persian Shop</b><span>خرید امن سرویس‌های دیجیتال</span><span>قیمت‌های به‌روز</span><span>پشتیبانی سفارش</span></div></div><div className="container copyright">© 2026 Persian Shop — تمامی حقوق محفوظ است.</div></footer>
+    const rails: { category: StoreCategory; items: StoreProduct[] }[] = [];
+    for (const c of categories) {
+      const items = products.filter(p => p.category === c.id && !used.has(p.slug)).slice(0, 4);
+      items.forEach(p => used.add(p.slug));
+      if (items.length >= 2) rails.push({ category: c, items });
+      if (rails.length === 4) break;
+    }
 
-  <nav className="mobileBottom"><button onClick={scrollHome}><Icon name="home" size={21}/><span>خانه</span></button><button onClick={()=>setMobileMenu(v=>!v)}><Icon name="grid" size={21}/><span>دسته‌بندی</span></button><button className="bottomCart" onClick={()=>setCartOpen(true)}><span className="bottomCartCircle"><Icon name="cart" size={23}/>{cartCount>0&&<b>{cartCount}</b>}</span><span>سبد خرید</span></button><button onClick={()=>setWalletOpen(true)}><Icon name="wallet" size={21}/><span>کیف پول</span></button><button onClick={()=>setAccountOpen(true)}><Icon name="user" size={21}/><span>حساب من</span></button></nav>
+    return { featured: featured.slice(0, 7), rails };
+  }, [categories, products]);
 
-  {selected&&<div className="modalBack" onMouseDown={()=>setSelected(null)}><form className="productModal" onSubmit={add} onMouseDown={e=>e.stopPropagation()}><button type="button" className="x" onClick={()=>setSelected(null)}><Icon name="close" size={20}/></button><div className="modalImage"><img src={selected.image} alt={selected.name}/><button type="button" className={favorites.includes(selected.slug)?"fav active":"fav"} onClick={()=>toggleFav(selected.slug)}><Icon name="heart" size={20}/></button></div><div className="modalInfo"><div className="crumb">فروشگاه / {categories.find(c=>c.id===selected.category)?.name}</div><h2>{selected.name}</h2><div className="rating"><Icon name="star" size={15}/> ۴.۸ <span>• محصول فعال و قابل سفارش</span></div><p className="desc">{selected.description||"این محصول از کاتالوگ اصلی Persian Shop دریافت شده و اطلاعات سفارش پس از ثبت بررسی می‌شود."}</p><div className="featureList"><span><Icon name="shield" size={16}/> سفارش امن</span><span><Icon name="bolt" size={16}/> پردازش پس از ثبت</span><span><Icon name="check" size={16}/> بدون دریافت پسورد</span></div><label className="orderInputLabel">اطلاعات لازم برای سفارش<small>{selected.inputPrompt}</small><textarea required value={input} onChange={e=>setInput(e.target.value)} placeholder="اطلاعات خواسته‌شده را دقیق وارد کنید..."/></label><div className="buyBox"><div className="qty"><button type="button" onClick={()=>setQty(Math.max(1,qty-1))}><Icon name="minus" size={17}/></button><b>{qty}</b><button type="button" onClick={()=>setQty(qty+1)}><Icon name="plus" size={17}/></button></div><div className="price"><small>مبلغ نهایی</small><strong>{money(selected.price*qty)}</strong></div><button className="addCart" type="submit"><Icon name="cart" size={18}/> افزودن به سبد</button></div></div></form></div>}
+  const heroSlides = [
+    {
+      eyebrow: "فروشگاه تخصصی خدمات دیجیتال",
+      title: "سرویس‌های دیجیتال، مرتب و قابل اعتماد",
+      text: "از شبکه‌های اجتماعی تا اشتراک‌های پرمیوم؛ انتخاب سریع، اطلاعات شفاف و پشتیبانی در یک مسیر ساده.",
+      tone: "hero-yellow",
+      cat: "telegram",
+      chips: ["تلگرام", "اینستاگرام", "TikTok"],
+    },
+    {
+      eyebrow: "AI Premium Collection",
+      title: "اشتراک ابزارهای هوش مصنوعی",
+      text: "محصولات فعال AI فروشگاه در یک دسته مستقل با جزئیات سفارش مشخص و دسترسی سریع.",
+      tone: "hero-lilac",
+      cat: "ai",
+      chips: ["ChatGPT", "Claude", "AI Tools"],
+    },
+    {
+      eyebrow: "Premium Digital",
+      title: "اکانت‌ها و سرویس‌های پرمیوم",
+      text: "محصولات دیجیتال منتخب، بدون شلوغی و تکرار؛ هر سرویس فقط در جای مناسب خودش نمایش داده می‌شود.",
+      tone: "hero-mint",
+      cat: "digital",
+      chips: ["Premium", "Subscription", "Support"],
+    },
+  ];
 
-  {cartOpen&&<><div className="drawerBack" onClick={()=>setCartOpen(false)}/><aside className="cartDrawer"><div className="drawerTitle"><div><h2>سبد خرید</h2><small>{cartCount} کالا</small></div><button onClick={()=>setCartOpen(false)}><Icon name="close" size={21}/></button></div>{checkoutDone&&<div className="successBox"><Icon name="check" size={20}/><div><b>درخواست ثبت شد</b><small>کد پیگیری: {checkoutDone}</small></div></div>}{!cart.length&&!checkoutDone?<div className="emptyCart"><Icon name="bag" size={45}/><b>سبد خرید خالی است</b><span>محصولات موردنظرت را به سبد اضافه کن.</span><button onClick={()=>{setCartOpen(false);selectCat("all")}}>مشاهده محصولات</button></div>:cart.length>0&&<><div className="cartLines">{cart.map((x,i)=><article key={`${x.product.slug}-${i}`}><img src={x.product.image} alt=""/><div className="cartLineInfo"><b>{x.product.name}</b><small>{x.input}</small><strong>{money(x.product.price*x.qty)}</strong><div className="miniQty"><button onClick={()=>updateCartQty(i,-1)}>{x.qty===1?<Icon name="trash" size={15}/>:<Icon name="minus" size={15}/>}</button><span>{x.qty}</span><button onClick={()=>updateCartQty(i,1)}><Icon name="plus" size={15}/></button></div></div></article>)}</div><div className="drawerCheckout"><div><span>جمع سبد خرید</span><b>{money(cartTotal)}</b></div><button className="checkoutBtn" onClick={finishCheckout}>ثبت درخواست سفارش</button><small>پرداخت و تأیید نهایی سفارش پس از بررسی اطلاعات انجام می‌شود.</small></div></>}</aside></>}
+  const currentHero = heroSlides[hero] || heroSlides[0];
 
-  {walletOpen&&<div className="modalBack" onMouseDown={()=>setWalletOpen(false)}><div className="smallModal walletModal" onMouseDown={e=>e.stopPropagation()}><button className="x" onClick={()=>setWalletOpen(false)}><Icon name="close" size={20}/></button><div className="modalIcon"><Icon name="wallet" size={27}/></div><h2>افزایش موجودی کیف پول</h2><p>ابتدا مبلغ شارژ را به تومان وارد کن.</p><label className="amountInput"><span>تومان</span><input inputMode="numeric" value={walletAmount} onChange={e=>setWalletAmount(e.target.value.replace(/\D/g,""))} placeholder="مثلاً 500000"/></label><div className="paymentCards">{settings.cardEnabled&&<article><div className="paymentHead"><span><Icon name="wallet" size={19}/></span><b>کارت‌به‌کارت</b></div>{settings.cardNumber?<><div className="payRow"><span>شماره کارت</span><strong>{digits(settings.cardNumber)}</strong><button onClick={()=>copy(settings.cardNumber,"شماره کارت")}><Icon name="copy" size={16}/></button></div>{settings.cardHolder&&<div className="payRow simple"><span>به نام</span><b>{settings.cardHolder}</b></div>}</>:<p className="notSet">اطلاعات کارت هنوز در مدیریت ثبت نشده است.</p>}{settings.cardText&&<small>{settings.cardText}</small>}</article>}{settings.cryptoEnabled&&<article><div className="paymentHead"><span>₮</span><b>پرداخت USDT</b></div><div className="payRow"><span>شبکه</span><b>{settings.cryptoNetwork||"BEP20"}</b></div>{settings.cryptoAddress?<div className="cryptoAddress"><code>{settings.cryptoAddress}</code><button onClick={()=>copy(settings.cryptoAddress,"آدرس کیف پول")}><Icon name="copy" size={16}/></button></div>:<p className="notSet">آدرس USDT هنوز در مدیریت ثبت نشده است.</p>}{settings.cryptoText&&<small>{settings.cryptoText}</small>}</article>}</div><button className="supportPay" onClick={openSupport}><Icon name="headset" size={18}/> ارسال رسید برای پشتیبانی</button></div></div>}
+  const cartCount = cart.reduce((sum, x) => sum + x.qty, 0);
+  const cartTotal = cart.reduce((sum, x) => sum + x.product.price * x.qty, 0);
+  const walletAmountNumber = parseAmount(walletAmount);
 
-  {accountOpen&&<div className="modalBack" onMouseDown={()=>setAccountOpen(false)}><form className="smallModal accountModal" onSubmit={saveProfile} onMouseDown={e=>e.stopPropagation()}><button type="button" className="x" onClick={()=>setAccountOpen(false)}><Icon name="close" size={20}/></button><div className="modalIcon"><Icon name="user" size={27}/></div><h2>حساب کاربری</h2><p>اطلاعات برای تجربه بهتر خرید روی همین دستگاه ذخیره می‌شود.</p><label>نام و نام خانوادگی<input required value={profile.name} onChange={e=>setProfile({...profile,name:e.target.value})} placeholder="نام شما"/></label><label>شماره موبایل<input required inputMode="tel" value={profile.mobile} onChange={e=>setProfile({...profile,mobile:e.target.value})} placeholder="09xxxxxxxxx"/></label><div className="accountStats"><span><Icon name="heart" size={17}/><b>{favorites.length}</b><small>علاقه‌مندی</small></span><span><Icon name="cart" size={17}/><b>{cartCount}</b><small>سبد خرید</small></span></div><button className="primaryForm">ذخیره اطلاعات</button></form></div>}
+  const notify = (message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(""), 1900);
+  };
 
-  {supportOpen&&<div className="modalBack" onMouseDown={()=>setSupportOpen(false)}><div className="smallModal supportModal" onMouseDown={e=>e.stopPropagation()}><button className="x" onClick={()=>setSupportOpen(false)}><Icon name="close" size={20}/></button><div className="modalIcon"><Icon name="headset" size={27}/></div><h2>پشتیبانی Persian Shop</h2><p>برای سوال قبل از خرید، پیگیری سفارش یا ارسال رسید با پشتیبانی در ارتباط باش.</p>{settings.supportUsername?<button className="telegramSupport" onClick={openSupport}><Icon name="telegram" size={20}/> ارتباط در تلگرام <b>{settings.supportUsername}</b></button>:<div className="notSet supportUnset">نام کاربری پشتیبانی هنوز در تنظیمات فروشگاه وارد نشده است.</div>}</div></div>}
+  const openProduct = (product: StoreProduct) => {
+    setSelected(product);
+    setQty(1);
+    setInput("");
+  };
 
-  {toast&&<div className="toast"><Icon name="check" size={17}/>{toast}</div>}
- </main>
+  const addToCart = (e?: FormEvent) => {
+    e?.preventDefault();
+    if (!selected) return;
+
+    setCart(current => {
+      const index = current.findIndex(x => x.product.slug === selected.slug && x.input === input);
+      if (index < 0) return [...current, { product: selected, qty, input }];
+      const copy = [...current];
+      copy[index] = { ...copy[index], qty: copy[index].qty + qty };
+      return copy;
+    });
+
+    setSelected(null);
+    notify("به سبد خرید اضافه شد");
+  };
+
+  const toggleFav = (slug: string) =>
+    setFavorites(current =>
+      current.includes(slug) ? current.filter(x => x !== slug) : [...current, slug]
+    );
+
+  const openCatalog = (id = "all") => {
+    setCategory(id);
+    setCatalogOpen(true);
+  };
+
+  const launchWallet = () => {
+    setWalletOpen(true);
+    setWalletStep(1);
+  };
+
+  const openSupport = () => {
+    const username = settings.supportUsername?.replace(/^@/, "");
+    if (username) window.open(`https://t.me/${username}`, "_blank");
+    else setSupportOpen(true);
+  };
+
+  const copyText = async (text: string, label: string) => {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      notify(`${label} کپی شد`);
+    } catch {
+      notify("کپی خودکار در این مرورگر در دسترس نیست");
+    }
+  };
+
+  const saveProfile = (e: FormEvent) => {
+    e.preventDefault();
+    const cleanedMobile = faToEn(profile.mobile).replace(/\D/g, "");
+    if (profile.name.trim().length < 2 || cleanedMobile.length < 10) {
+      notify("نام و شماره موبایل را کامل وارد کنید");
+      return;
+    }
+    const next = { name: profile.name.trim(), mobile: cleanedMobile };
+    setProfile(next);
+    try { localStorage.setItem("persian-shop-profile", JSON.stringify(next)); } catch {}
+    setEditingProfile(false);
+    notify("اطلاعات حساب ذخیره شد");
+  };
+
+  const updateCartQty = (index: number, delta: number) =>
+    setCart(current =>
+      current.flatMap((x, i) =>
+        i === index ? (x.qty + delta > 0 ? [{ ...x, qty: x.qty + delta }] : []) : [x]
+      )
+    );
+
+  const finishCheckout = () => {
+    if (!cart.length) return;
+    const order: LocalOrder = {
+      ref: `PS-${Date.now().toString().slice(-8)}`,
+      total: cartTotal,
+      count: cartCount,
+      createdAt: new Date().toISOString(),
+    };
+    setOrders(current => [order, ...current].slice(0, 12));
+    setCart([]);
+    setCartOpen(false);
+    setAccountOpen(true);
+    notify("درخواست خرید در حساب ذخیره شد");
+  };
+
+  const chooseWalletMethod = (method: WalletMethod) => {
+    setWalletMethod(method);
+    setWalletStep(3);
+  };
+
+  return (
+    <main className="shop">
+      <div className="topCampaign">
+        <div className="container">
+          <span><Icon name="bolt" size={15} /> خرید سریع سرویس‌های دیجیتال</span>
+          <button onClick={launchWallet}>افزایش موجودی</button>
+        </div>
+      </div>
+
+      <header className="header">
+        <div className="container headerMain">
+          <button className="logo" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+            <span className="logoMark">P</span>
+            <span><b>{settings.shopName}</b><small>Digital Marketplace</small></span>
+          </button>
+
+          <label className="searchBox">
+            <Icon name="search" size={20} />
+            <input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") openCatalog("all"); }}
+              placeholder="جستجو در محصولات Persian Shop"
+            />
+            {query && <button type="button" onClick={() => setQuery("")}><Icon name="close" size={17} /></button>}
+          </label>
+
+          <div className="headActions">
+            <button onClick={() => setAccountOpen(true)} className="headAction">
+              <Icon name="user" size={21} />
+              <span>{profile.name || "حساب کاربری"}</span>
+            </button>
+            <button onClick={() => setCartOpen(true)} className="headIcon" aria-label="سبد خرید">
+              <Icon name="cart" size={24} />
+              {cartCount > 0 && <b>{cartCount}</b>}
+            </button>
+          </div>
+        </div>
+
+        <div className="container navRow">
+          <button className="navStrong" onClick={() => openCatalog("all")}><Icon name="menu" size={17} /> دسته‌بندی محصولات</button>
+          {categories.slice(0, 5).map(c => <button key={c.id} onClick={() => openCatalog(c.id)}>{c.name}</button>)}
+          <span />
+          <button onClick={launchWallet}><Icon name="wallet" size={16} /> کیف پول</button>
+          <button onClick={openSupport}><Icon name="headset" size={16} /> پشتیبانی</button>
+        </div>
+      </header>
+
+      <section className="container quickCategories">
+        {categories.slice(0, 7).map(c => (
+          <button key={c.id} onClick={() => openCatalog(c.id)}>
+            <BrandGlyph id={c.id} size={54} />
+            <b>{shortCategory(c.name)}</b>
+          </button>
+        ))}
+        <button onClick={openSupport}>
+          <span className="supportGlyph"><Icon name="headset" size={25} /></span>
+          <b>پشتیبانی</b>
+        </button>
+      </section>
+
+      <section className={`container hero ${currentHero.tone}`}>
+        <div className="heroCopy">
+          <small>{currentHero.eyebrow}</small>
+          <h1>{currentHero.title}</h1>
+          <p>{currentHero.text}</p>
+          <div className="heroActions">
+            <button className="primaryDark" onClick={() => openCatalog(currentHero.cat)}>مشاهده محصولات <Icon name="chevron" size={15} /></button>
+            <button className="secondaryLight" onClick={launchWallet}>شارژ کیف پول</button>
+          </div>
+        </div>
+
+        <div className="heroVisual">
+          <div className="heroOrb orbOne"><BrandGlyph id={currentHero.cat} size={74} /></div>
+          <div className="heroOrb orbTwo"><Icon name="shield" size={32} /></div>
+          <div className="heroChips">
+            {currentHero.chips.map(chip => <span key={chip}>{chip}</span>)}
+          </div>
+        </div>
+
+        <div className="heroDots">
+          {heroSlides.map((_, i) => <button key={i} className={hero === i ? "on" : ""} onClick={() => setHero(i)} />)}
+        </div>
+      </section>
+
+      {!!homePlan.featured.length && (
+        <section className="container specialShelf">
+          <div className="specialLead">
+            <span><Icon name="bolt" size={28} /></span>
+            <h2>پیشنهادهای منتخب</h2>
+            <p>از هر دسته فقط یک انتخاب؛ بدون تکرار مصنوعی محصول</p>
+            <button onClick={() => openCatalog("all")}>مشاهده همه <Icon name="chevron" size={14} /></button>
+          </div>
+          <div className="specialRail">
+            {homePlan.featured.map(p => <MiniProduct key={p.slug} product={p} onOpen={openProduct} />)}
+          </div>
+        </section>
+      )}
+
+      <section className="container campaignGrid">
+        <Campaign id="telegram" title="خدمات تلگرام" text="ممبر، بازدید و تعامل" onClick={() => openCatalog("telegram")} />
+        <Campaign id="ai" title="AI Premium" text="اشتراک ابزارهای هوش مصنوعی" onClick={() => openCatalog("ai")} />
+        <Campaign id="instagram" title="رشد اینستاگرام" text="فالوور، لایک و بازدید" onClick={() => openCatalog("instagram")} />
+        <Campaign id="digital" title="Premium Accounts" text="اکانت و اشتراک دیجیتال" onClick={() => openCatalog("digital")} />
+      </section>
+
+      <section className="container categorySection">
+        <div className="sectionHeading">
+          <div><h2>خرید بر اساس دسته‌بندی</h2><p>هر دسته هویت مستقل دارد؛ پوستر محصول جای آیکون دسته‌بندی استفاده نمی‌شود.</p></div>
+          <button onClick={() => openCatalog("all")}>همه دسته‌ها <Icon name="chevron" size={14} /></button>
+        </div>
+
+        <div className="categoryGrid">
+          {categories.map(c => (
+            <button key={c.id} onClick={() => openCatalog(c.id)}>
+              <BrandGlyph id={c.id} size={66} />
+              <b>{c.name}</b>
+              <small>{c.count} محصول فعال</small>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {homePlan.rails.map((rail, index) => (
+        <section className="container editorialBlock" key={rail.category.id}>
+          <div className="editorialTop">
+            <div>
+              <span className="editorialBrand"><BrandGlyph id={rail.category.id} size={38} /></span>
+              <div><h2>{rail.category.name}</h2><p>{rail.category.description || "محصولات منتخب این دسته"}</p></div>
+            </div>
+            <button onClick={() => openCatalog(rail.category.id)}>مشاهده همه <Icon name="chevron" size={14} /></button>
+          </div>
+          <div className="editorialProducts">
+            {rail.items.map(p => (
+              <ProductCard key={p.slug} product={p} favorite={favorites.includes(p.slug)} onFav={toggleFav} onOpen={openProduct} />
+            ))}
+          </div>
+          {index === 1 && (
+            <div className="inlineWalletBanner">
+              <div><Icon name="wallet" size={25} /><span><b>کیف پول Persian Shop</b><small>مبلغ را وارد کن، روش پرداخت را انتخاب کن، سپس رسید را برای تأیید ارسال کن.</small></span></div>
+              <button onClick={launchWallet}>افزایش موجودی</button>
+            </div>
+          )}
+        </section>
+      ))}
+
+      <section className="container trustStrip">
+        <article><Icon name="shield" size={26} /><span><b>خرید شفاف</b><small>اطلاعات لازم هر محصول مشخص است</small></span></article>
+        <article><Icon name="wallet" size={26} /><span><b>پرداخت مرحله‌ای</b><small>کارت‌به‌کارت یا USDT</small></span></article>
+        <article><Icon name="headset" size={26} /><span><b>پشتیبانی سفارش</b><small>پیگیری از پشتیبانی فروشگاه</small></span></article>
+        <article><Icon name="grid" size={26} /><span><b>دسته‌بندی واقعی</b><small>محصولات مرتب و قابل جستجو</small></span></article>
+      </section>
+
+      <section className="container faq">
+        <div className="sectionHeading"><div><h2>سؤالات متداول</h2><p>پاسخ کوتاه به مراحل خرید و پرداخت</p></div></div>
+        <details><summary>بعد از انتخاب محصول چه اطلاعاتی لازم است؟</summary><p>در صفحه هر محصول، نوع اطلاعات لازم برای همان سرویس نمایش داده می‌شود. اطلاعات غیرضروری درخواست نمی‌شود.</p></details>
+        <details><summary>شارژ کیف پول چگونه انجام می‌شود؟</summary><p>ابتدا مبلغ را وارد می‌کنی، روش پرداخت را انتخاب می‌کنی، سپس مشخصات پرداخت و مرحله ارسال رسید نمایش داده می‌شود.</p></details>
+        <details><summary>چطور وضعیت خرید را پیگیری کنم؟</summary><p>شناسه درخواست در حساب کاربری نگهداری می‌شود و برای پیگیری می‌توانی از بخش پشتیبانی استفاده کنی.</p></details>
+      </section>
+
+      <footer className="footer">
+        <div className="container footerGrid">
+          <div className="footerBrand">
+            <div className="logo"><span className="logoMark">P</span><span><b>{settings.shopName}</b><small>Digital Marketplace</small></span></div>
+            <p>فروشگاه خدمات دیجیتال با دسته‌بندی شفاف، پرداخت مرحله‌ای و پشتیبانی سفارش.</p>
+          </div>
+          <div><b>فروشگاه</b><button onClick={() => openCatalog("all")}>همه محصولات</button><button onClick={launchWallet}>کیف پول</button><button onClick={() => setAccountOpen(true)}>حساب کاربری</button></div>
+          <div><b>پشتیبانی</b><button onClick={openSupport}>ارتباط با پشتیبانی</button><button onClick={() => document.querySelector(".faq")?.scrollIntoView({ behavior: "smooth" })}>سؤالات متداول</button></div>
+        </div>
+        <div className="container copyright">© 2026 Persian Shop</div>
+      </footer>
+
+      <nav className="mobileBottom">
+        <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}><Icon name="home" size={23} /><span>خانه</span></button>
+        <button onClick={() => openCatalog("all")}><Icon name="grid" size={23} /><span>دسته‌بندی</span></button>
+        <button className="mobileCart" onClick={() => setCartOpen(true)}><i><Icon name="cart" size={25} />{cartCount > 0 && <b>{cartCount}</b>}</i><span>سبد خرید</span></button>
+        <button onClick={launchWallet}><Icon name="wallet" size={23} /><span>کیف پول</span></button>
+        <button onClick={() => setAccountOpen(true)}><Icon name="user" size={23} /><span>حساب من</span></button>
+      </nav>
+
+      {catalogOpen && (
+        <div className="catalogLayer">
+          <div className="catalogHeader">
+            <button onClick={() => setCatalogOpen(false)}><Icon name="close" size={22} /></button>
+            <div><b>دسته‌بندی محصولات</b><small>{products.length} محصول فعال</small></div>
+            <span />
+          </div>
+
+          <div className="catalogSearch">
+            <Icon name="search" size={19} />
+            <input value={query} onChange={e => setQuery(e.target.value)} placeholder="جستجو در محصولات..." />
+          </div>
+
+          <div className="catalogBody">
+            <aside className="catalogSidebar">
+              <button className={category === "all" ? "active" : ""} onClick={() => setCategory("all")}>
+                <span className="allCatIcon"><Icon name="grid" size={21} /></span><b>همه</b>
+              </button>
+              {categories.map(c => (
+                <button key={c.id} className={category === c.id ? "active" : ""} onClick={() => setCategory(c.id)}>
+                  <BrandGlyph id={c.id} size={36} /><b>{shortCategory(c.name)}</b>
+                </button>
+              ))}
+            </aside>
+
+            <section className="catalogContent">
+              <div className="catalogTitle">
+                <div><h2>{category === "all" ? "همه محصولات" : categories.find(c => c.id === category)?.name}</h2><p>{filtered.length} محصول</p></div>
+                <label><Icon name="grid" size={15} /><select value={sort} onChange={e => setSort(e.target.value as "popular" | "low" | "high")}><option value="popular">پیشنهادی</option><option value="low">ارزان‌ترین</option><option value="high">گران‌ترین</option></select></label>
+              </div>
+
+              {category !== "all" && (
+                <div className="categoryIntro">
+                  <BrandGlyph id={category} size={54} />
+                  <div><b>{categories.find(c => c.id === category)?.name}</b><p>{categories.find(c => c.id === category)?.description || "محصولات فعال این دسته را انتخاب و بررسی کن."}</p></div>
+                </div>
+              )}
+
+              {filtered.length ? (
+                <div className="catalogGrid">
+                  {filtered.map(p => <ProductCard key={p.slug} product={p} favorite={favorites.includes(p.slug)} onFav={toggleFav} onOpen={openProduct} />)}
+                </div>
+              ) : (
+                <div className="emptyState"><Icon name="search" size={34} /><b>محصولی پیدا نشد</b><button onClick={() => { setQuery(""); setCategory("all"); }}>پاک کردن فیلترها</button></div>
+              )}
+            </section>
+          </div>
+        </div>
+      )}
+
+      {selected && (
+        <div className="overlay" onMouseDown={() => setSelected(null)}>
+          <form className="productSheet" onSubmit={addToCart} onMouseDown={e => e.stopPropagation()}>
+            <button className="sheetClose" type="button" onClick={() => setSelected(null)}><Icon name="close" size={21} /></button>
+            <div className="productMedia">
+              <img src={selected.image} alt={selected.name} />
+              <button type="button" className={favorites.includes(selected.slug) ? "heart active" : "heart"} onClick={() => toggleFav(selected.slug)}><Icon name="heart" size={20} /></button>
+            </div>
+            <div className="productInfo">
+              <small>{categories.find(c => c.id === selected.category)?.name}</small>
+              <h2>{selected.name}</h2>
+              <p>{selected.description || "جزئیات این محصول از کاتالوگ اصلی Persian Shop دریافت می‌شود."}</p>
+              <div className="productPoints"><span><Icon name="shield" size={15} /> سفارش امن</span><span><Icon name="headset" size={15} /> پشتیبانی</span></div>
+              <label className="orderInputLabel"><b>اطلاعات سفارش</b><small>{selected.inputPrompt}</small><textarea required value={input} onChange={e => setInput(e.target.value)} placeholder="اطلاعات خواسته‌شده را وارد کنید..." /></label>
+              <div className="productBuyBar">
+                <div className="qtyBox"><button type="button" onClick={() => setQty(Math.max(1, qty - 1))}><Icon name="minus" size={16} /></button><b>{qty}</b><button type="button" onClick={() => setQty(qty + 1)}><Icon name="plus" size={16} /></button></div>
+                <div className="buyPrice"><small>مبلغ</small><b>{money(selected.price * qty)}</b></div>
+                <button className="addButton" type="submit">افزودن به سبد</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {cartOpen && (
+        <>
+          <div className="drawerBack" onClick={() => setCartOpen(false)} />
+          <aside className="cartDrawer">
+            <div className="drawerHeader"><div><b>سبد خرید</b><small>{cartCount} آیتم</small></div><button onClick={() => setCartOpen(false)}><Icon name="close" size={21} /></button></div>
+            <div className="cartList">
+              {cart.length ? cart.map((line, i) => (
+                <article className="cartLine" key={`${line.product.slug}-${i}`}>
+                  <img src={line.product.image} alt={line.product.name} />
+                  <div><b>{line.product.name}</b><small>{line.input || "اطلاعات سفارش ثبت شده"}</small><strong>{money(line.product.price * line.qty)}</strong></div>
+                  <div className="cartQty"><button onClick={() => updateCartQty(i, 1)}><Icon name="plus" size={14} /></button><b>{line.qty}</b><button onClick={() => updateCartQty(i, -1)}>{line.qty === 1 ? <Icon name="trash" size={14} /> : <Icon name="minus" size={14} />}</button></div>
+                </article>
+              )) : <div className="emptyState"><Icon name="cart" size={36} /><b>سبد خرید خالی است</b><button onClick={() => { setCartOpen(false); openCatalog("all"); }}>مشاهده محصولات</button></div>}
+            </div>
+            {!!cart.length && <div className="cartSummary"><div><span>مبلغ کل</span><b>{money(cartTotal)}</b></div><button onClick={finishCheckout}>ثبت درخواست خرید</button></div>}
+          </aside>
+        </>
+      )}
+
+      {walletOpen && (
+        <div className="overlay" onMouseDown={() => setWalletOpen(false)}>
+          <section className="accountSheet walletSheet" onMouseDown={e => e.stopPropagation()}>
+            <button className="sheetClose" onClick={() => setWalletOpen(false)}><Icon name="close" size={21} /></button>
+            <div className="sheetHero"><span className="sheetIcon"><Icon name="wallet" size={25} /></span><div><h2>افزایش موجودی کیف پول</h2><p>شارژ کیف پول در سه مرحله انجام می‌شود.</p></div></div>
+            <div className="steps">{[1, 2, 3].map(step => <span key={step} className={walletStep >= step ? "active" : ""}><i>{walletStep > step ? <Icon name="check" size={13} /> : step}</i><b>{step === 1 ? "مبلغ" : step === 2 ? "روش پرداخت" : "ارسال رسید"}</b></span>)}</div>
+
+            {walletStep === 1 && (
+              <div className="walletStage">
+                <label className="amountField"><span>مبلغ شارژ</span><div><input inputMode="numeric" value={walletAmount} onChange={e => setWalletAmount(e.target.value)} placeholder="مثلاً 500000" /><b>تومان</b></div></label>
+                <div className="quickAmounts">{[100000, 250000, 500000, 1000000].map(amount => <button key={amount} onClick={() => setWalletAmount(String(amount))}>{new Intl.NumberFormat("fa-IR").format(amount)}</button>)}</div>
+                <div className="stageNotice"><Icon name="shield" size={18} /><span>بعد از وارد کردن مبلغ، روش پرداخت را انتخاب می‌کنی. موجودی فقط پس از تأیید مدیریت اعمال می‌شود.</span></div>
+                <button className="sheetPrimary" disabled={walletAmountNumber < 10000} onClick={() => setWalletStep(2)}>ادامه و انتخاب روش پرداخت</button>
+              </div>
+            )}
+
+            {walletStep === 2 && (
+              <div className="walletStage">
+                <div className="amountSummary"><span>مبلغ شارژ</span><b>{money(walletAmountNumber)}</b><button onClick={() => setWalletStep(1)}>ویرایش</button></div>
+                <div className="paymentMethods">
+                  {settings.cardEnabled && <button onClick={() => chooseWalletMethod("card")}><span className="methodIcon"><Icon name="wallet" size={23} /></span><div><b>کارت‌به‌کارت</b><small>پرداخت ریالی و ارسال رسید</small></div><Icon name="chevron" size={18} /></button>}
+                  {settings.cryptoEnabled && <button onClick={() => chooseWalletMethod("crypto")}><span className="methodIcon crypto">₮</span><div><b>پرداخت USDT</b><small>شبکه {settings.cryptoNetwork || "BEP20"}</small></div><Icon name="chevron" size={18} /></button>}
+                </div>
+                {!settings.cardEnabled && !settings.cryptoEnabled && <div className="emptyState"><Icon name="headset" size={31} /><b>روش پرداخت فعالی ثبت نشده</b><button onClick={openSupport}>ارتباط با پشتیبانی</button></div>}
+              </div>
+            )}
+
+            {walletStep === 3 && (
+              <div className="walletStage">
+                <div className="paymentReceiptHead"><div><small>مبلغ قابل پرداخت</small><b>{money(walletAmountNumber)}</b></div><button onClick={() => setWalletStep(2)}>تغییر روش</button></div>
+                {walletMethod === "card" ? (
+                  <div className="paymentCard">
+                    <div className="paymentTitle"><span className="methodIcon"><Icon name="wallet" size={22} /></span><div><b>کارت‌به‌کارت</b><small>مبلغ بالا را دقیقاً واریز کنید</small></div></div>
+                    <div className="copyRow"><span><small>شماره کارت</small><b dir="ltr">{cardFormat(settings.cardNumber) || "در مدیریت ثبت نشده"}</b></span><button onClick={() => copyText(faToEn(settings.cardNumber).replace(/\D/g, ""), "شماره کارت")}><Icon name="copy" size={18} /></button></div>
+                    <div className="infoRow"><small>به نام</small><b>{settings.cardHolder || "—"}</b></div>
+                    {cleanTelegramText(settings.cardText) && <p className="paymentHint">{cleanTelegramText(settings.cardText)}</p>}
+                  </div>
+                ) : (
+                  <div className="paymentCard">
+                    <div className="paymentTitle"><span className="methodIcon crypto">₮</span><div><b>پرداخت USDT</b><small>فقط روی شبکه اعلام‌شده انتقال دهید</small></div></div>
+                    <div className="infoRow"><small>شبکه</small><b>{settings.cryptoNetwork || "BEP20"}</b></div>
+                    <div className="copyRow"><span><small>آدرس کیف پول</small><b className="address" dir="ltr">{settings.cryptoAddress || "در مدیریت ثبت نشده"}</b></span><button onClick={() => copyText(settings.cryptoAddress, "آدرس کیف پول")}><Icon name="copy" size={18} /></button></div>
+                    {cleanTelegramText(settings.cryptoText) && <p className="paymentHint">{cleanTelegramText(settings.cryptoText)}</p>}
+                  </div>
+                )}
+                <div className="receiptStep"><span><Icon name="orders" size={22} /></span><div><b>مرحله آخر: ارسال رسید</b><p>پس از پرداخت، رسید را همراه مبلغ <strong>{money(walletAmountNumber)}</strong> برای پشتیبانی بفرست. بعد از تأیید مدیریت، موجودی کیف پول افزایش پیدا می‌کند.</p></div></div>
+                <button className="sheetPrimary dark" onClick={openSupport}><Icon name="headset" size={19} /> ارسال رسید برای پشتیبانی</button>
+              </div>
+            )}
+          </section>
+        </div>
+      )}
+
+      {accountOpen && (
+        <div className="overlay" onMouseDown={() => setAccountOpen(false)}>
+          <section className="accountSheet" onMouseDown={e => e.stopPropagation()}>
+            <button className="sheetClose" onClick={() => setAccountOpen(false)}><Icon name="close" size={21} /></button>
+            {!profile.name || editingProfile ? (
+              <>
+                <div className="sheetHero"><span className="sheetIcon"><Icon name="user" size={25} /></span><div><h2>{profile.name ? "ویرایش اطلاعات حساب" : "تکمیل حساب خرید"}</h2><p>این اطلاعات برای نظم سفارش‌ها و پیگیری خرید روی همین دستگاه نگهداری می‌شود.</p></div></div>
+                <form className="profileForm" onSubmit={saveProfile}>
+                  <label><span>نام و نام خانوادگی</span><input value={profile.name} onChange={e => setProfile({ ...profile, name: e.target.value })} placeholder="نام شما" /></label>
+                  <label><span>شماره موبایل</span><input dir="ltr" inputMode="tel" value={profile.mobile} onChange={e => setProfile({ ...profile, mobile: e.target.value })} placeholder="09xxxxxxxxx" /></label>
+                  <div className="profileInfo"><Icon name="shield" size={18} /><span>در این نسخه، اطلاعات حساب در مرورگر همین دستگاه ذخیره می‌شود و برای ورود بانکی یا دریافت رمز استفاده نمی‌شود.</span></div>
+                  <button className="sheetPrimary" type="submit">ذخیره اطلاعات</button>
+                </form>
+              </>
+            ) : (
+              <>
+                <div className="accountDashboardHead"><span className="avatar">{profile.name.trim().slice(0, 1)}</span><div><h2>{profile.name}</h2><p dir="ltr">{profile.mobile}</p></div><button onClick={() => setEditingProfile(true)}><Icon name="edit" size={17} /> ویرایش</button></div>
+                <div className="accountStats">
+                  <button onClick={() => { setAccountOpen(false); setCartOpen(true); }}><Icon name="cart" size={22} /><span><b>{cartCount}</b><small>سبد خرید</small></span></button>
+                  <button onClick={() => { setAccountOpen(false); openCatalog("all"); }}><Icon name="heart" size={22} /><span><b>{favorites.length}</b><small>علاقه‌مندی</small></span></button>
+                  <button onClick={() => { setAccountOpen(false); launchWallet(); }}><Icon name="wallet" size={22} /><span><b>+</b><small>افزایش موجودی</small></span></button>
+                </div>
+                <div className="accountMenu"><button onClick={() => { setAccountOpen(false); openCatalog("all"); }}><span><Icon name="grid" size={20} /><b>مشاهده محصولات</b></span><Icon name="chevron" size={17} /></button><button onClick={openSupport}><span><Icon name="headset" size={20} /><b>پشتیبانی و پیگیری</b></span><Icon name="chevron" size={17} /></button></div>
+                <div className="recentOrders">
+                  <div className="recentOrdersTitle"><span><Icon name="orders" size={19} /><b>درخواست‌های اخیر</b></span><small>{orders.length ? `${orders.length} مورد` : "هنوز موردی نیست"}</small></div>
+                  {orders.length ? orders.slice(0, 4).map(order => <article key={order.ref}><span><b>{order.ref}</b><small>{new Date(order.createdAt).toLocaleDateString("fa-IR")}</small></span><span><b>{money(order.total)}</b><small>{order.count} آیتم</small></span></article>) : <div className="ordersEmpty"><Icon name="clock" size={24} /><span>بعد از ثبت درخواست خرید، شناسه آن اینجا دیده می‌شود.</span></div>}
+                </div>
+              </>
+            )}
+          </section>
+        </div>
+      )}
+
+      {supportOpen && (
+        <div className="overlay" onMouseDown={() => setSupportOpen(false)}>
+          <section className="smallDialog" onMouseDown={e => e.stopPropagation()}>
+            <button className="sheetClose" onClick={() => setSupportOpen(false)}><Icon name="close" size={20} /></button>
+            <span className="sheetIcon"><Icon name="headset" size={25} /></span><h2>پشتیبانی Persian Shop</h2><p>نام کاربری پشتیبانی هنوز در تنظیمات فروشگاه ثبت نشده است.</p><button className="sheetPrimary" onClick={() => setSupportOpen(false)}>متوجه شدم</button>
+          </section>
+        </div>
+      )}
+
+      {toast && <div className="toast"><Icon name="check" size={17} />{toast}</div>}
+    </main>
+  );
 }
 
-function CategoryVisual({category,image,large=false}:{category:StoreCategory;image:string;large?:boolean}){return <span className={`quickCircle ${large?"large":""}`} style={{"--accent":catAccent[category.id]||"#f5bd13"} as React.CSSProperties}>{image?<img src={image} alt=""/>:<span>{category.emoji}</span>}</span>}
+function ProductCard({ product, favorite, onFav, onOpen }: { product: StoreProduct; favorite: boolean; onFav: (slug: string) => void; onOpen: (product: StoreProduct) => void; }) {
+  return <article className="productCard"><button className="productImage" onClick={() => onOpen(product)}><img src={product.image} alt={product.name} /></button><button className={favorite ? "cardHeart active" : "cardHeart"} onClick={() => onFav(product.slug)} aria-label="علاقه‌مندی"><Icon name="heart" size={17} /></button><div className="productCardBody"><button className="productName" onClick={() => onOpen(product)}>{product.name}</button><small className="productStatus"><i /> قابل سفارش</small><div className="productPrice"><b>{money(product.price)}</b></div><button className="productCta" onClick={() => onOpen(product)}>جزئیات و سفارش</button></div></article>;
+}
 
-function shortCategory(name:string){return name.replace("خدمات ","").replace("اشتراک ","").replace("سایر محصولات ","").replace("سایر شبکه‌های ","")}
+function MiniProduct({ product, onOpen }: { product: StoreProduct; onOpen: (product: StoreProduct) => void }) {
+  return <button className="miniProduct" onClick={() => onOpen(product)}><img src={product.image} alt={product.name} /><span>{product.name}</span><b>{money(product.price)}</b></button>;
+}
 
-function CampaignCard({cls,kicker,title,text,image,onClick}:{cls:string;kicker:string;title:string;text:string;image:string;onClick:()=>void}){return <button className={`campaignCard ${cls}`} onClick={onClick}><div><small>{kicker}</small><b>{title}</b><span>{text}</span><em>مشاهده <Icon name="chevron" size={13}/></em></div>{image&&<img src={image} alt=""/>}</button>}
+function Campaign({ id, title, text, onClick }: { id: string; title: string; text: string; onClick: () => void }) {
+  return <button className={`campaign campaign-${id}`} onClick={onClick}><div><small>Persian Shop</small><b>{title}</b><span>{text}</span><em>مشاهده محصولات <Icon name="chevron" size={13} /></em></div><BrandGlyph id={id} size={78} /></button>;
+}
 
-function ProductRail({title,subtitle,products,onOpen,onFav,favorites,onAll}:{title:string;subtitle:string;products:StoreProduct[];onOpen:(p:StoreProduct)=>void;onFav:(s:string)=>void;favorites:string[];onAll:()=>void}){if(!products.length)return null;return <section className="container productRailSection"><div className="railTitle"><div><h2>{title}</h2><p>{subtitle}</p></div><button onClick={onAll}>مشاهده همه <Icon name="chevron" size={14}/></button></div><div className="productRail">{products.map(p=><ProductCard key={p.slug} p={p} onOpen={onOpen} onFav={onFav} fav={favorites.includes(p.slug)}/>)}</div></section>}
+function BrandGlyph({ id, size = 52 }: { id: string; size?: number }) {
+  const color = brandColor(id);
+  const common = { width: size, height: size };
+  if (id === "telegram") return <span className="brandGlyph" style={{ ...common, background: "#EAF7FD", color }}><svg viewBox="0 0 24 24"><path d="M20.6 4.1 3.7 10.6c-1.2.5-1.2 1.1-.2 1.4l4.3 1.3 1.7 5.1c.2.6.1.8.8.8.5 0 .8-.2 1-.4l2.1-2 4.4 3.2c.8.5 1.4.2 1.6-.8l2.8-13.3c.3-1.2-.5-1.8-1.6-1.4ZM9.4 13l8.5-5.4c.4-.2.8-.1.5.2l-7 6.4-.3 3.2-1.7-4.4Z" fill="currentColor"/></svg></span>;
+  if (id === "instagram") return <span className="brandGlyph" style={{ ...common, background: "#FFF0F4", color }}><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="5" fill="none" stroke="currentColor" strokeWidth="2"/><circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="2"/><circle cx="17.2" cy="6.9" r="1.1" fill="currentColor"/></svg></span>;
+  if (id === "youtube") return <span className="brandGlyph" style={{ ...common, background: "#FFF0F2", color }}><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="4" fill="currentColor"/><path d="m10 9 5 3-5 3V9Z" fill="#fff"/></svg></span>;
+  if (id === "tiktok") return <span className="brandGlyph" style={{ ...common, background: "#F1F1F1", color }}><svg viewBox="0 0 24 24"><path d="M14 4v10.2a4.2 4.2 0 1 1-3.2-4.1v2.4a1.9 1.9 0 1 0 1 1.7V4h2.2c.5 2.1 1.8 3.4 4 3.8V10c-1.7-.2-3-.8-4-1.8V4Z" fill="currentColor"/></svg></span>;
+  if (id === "ai") return <span className="brandGlyph" style={{ ...common, background: "#F0EFFF", color }}><svg viewBox="0 0 24 24"><path d="M12 2.8 13.7 8l5.2 1.7-5.2 1.7L12 16.6l-1.7-5.2-5.2-1.7L10.3 8 12 2.8Zm6 11.1.9 2.7 2.7.9-2.7.9-.9 2.7-.9-2.7-2.7-.9 2.7-.9.9-2.7Z" fill="currentColor"/></svg></span>;
+  if (id === "digital") return <span className="brandGlyph" style={{ ...common, background: "#FFF8E5", color }}><svg viewBox="0 0 24 24"><path d="m4 8 4-4h8l4 4-8 12L4 8Zm4.8-2-2 2h10.4l-2-2H8.8ZM7.4 10 12 17.1 16.6 10H7.4Z" fill="currentColor"/></svg></span>;
+  return <span className="brandGlyph" style={{ ...common, background: "#ECFAFE", color }}><svg viewBox="0 0 24 24"><circle cx="8" cy="9" r="3" fill="currentColor"/><circle cx="16" cy="8" r="2.5" fill="currentColor" opacity=".72"/><path d="M3.5 19c.4-3.6 2-5.4 4.5-5.4s4.2 1.8 4.5 5.4h-9Zm8.3 0c.3-2.9 1.6-4.4 4-4.4 2.1 0 3.6 1.5 3.9 4.4h-7.9Z" fill="currentColor"/></svg></span>;
+}
 
-function CompactCard({p,onOpen,badge}:{p:StoreProduct;onOpen:(p:StoreProduct)=>void;badge?:string}){return <button className="compactCard" onClick={()=>onOpen(p)}><div className="compactImage"><img src={p.image} alt={p.name}/>{badge&&<span>{badge}</span>}</div><h3>{p.name}</h3><div><small>موجود</small><strong>{money(p.price)}</strong></div></button>}
+function shortCategory(name: string) {
+  return name.replace("خدمات ", "").replace("اشتراک ", "").replace("سایر محصولات ", "").replace("سایر شبکه‌های ", "");
+}
 
-function ProductCard({p,onOpen,onFav,fav}:{p:StoreProduct;onOpen:(p:StoreProduct)=>void;onFav:(s:string)=>void;fav:boolean}){return <article className="pCard"><button className="pImage" onClick={()=>onOpen(p)}><img src={p.image} alt={p.name} loading="lazy"/></button><button className={fav?"heart active":"heart"} onClick={()=>onFav(p.slug)} aria-label="علاقه‌مندی"><Icon name="heart" size={17}/></button><div className="pBody"><span className="availability"><i/> قابل سفارش</span><h3 onClick={()=>onOpen(p)}>{p.name}</h3><div className="pRating"><span><Icon name="star" size={12}/> ۴.۸</span><small>ارسال دیجیتال</small></div><div className="pFooter"><strong>{money(p.price)}</strong><button onClick={()=>onOpen(p)} aria-label="افزودن"><Icon name="plus" size={18}/></button></div></div></article>}
-
-function Icon({name,size=20}:{name:IconName;size?:number}){const common={width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:1.8,strokeLinecap:"round" as const,strokeLinejoin:"round" as const,"aria-hidden":true};switch(name){case"home":return <svg {...common}><path d="M3 10.8 12 3l9 7.8"/><path d="M5.5 9.5V21h13V9.5M9.5 21v-6h5v6"/></svg>;case"grid":return <svg {...common}><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>;case"search":return <svg {...common}><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>;case"user":return <svg {...common}><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.8-4.2 3.2-6.3 7.5-6.3s6.7 2.1 7.5 6.3"/></svg>;case"cart":return <svg {...common}><path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L20.5 8H6"/><circle cx="9.5" cy="20" r="1"/><circle cx="17.5" cy="20" r="1"/></svg>;case"wallet":return <svg {...common}><path d="M4 6.5h14a2 2 0 0 1 2 2v10H5a2 2 0 0 1-2-2v-12a2 2 0 0 1 2-2h12"/><path d="M15 11h6v4h-6a2 2 0 1 1 0-4Z"/></svg>;case"headset":return <svg {...common}><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><path d="M4 13h2a2 2 0 0 1 2 2v4H6a2 2 0 0 1-2-2v-4ZM20 13h-2a2 2 0 0 0-2 2v4h2a2 2 0 0 0 2-2v-4Z"/><path d="M16 19c0 1.1-.9 2-2 2h-2"/></svg>;case"heart":return <svg {...common}><path d="M20.8 4.6a5.4 5.4 0 0 0-7.6 0L12 5.8l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6L12 21l8.8-8.8a5.4 5.4 0 0 0 0-7.6Z"/></svg>;case"chevron":return <svg {...common}><path d="m9 18 6-6-6-6"/></svg>;case"menu":return <svg {...common}><path d="M4 6h16M4 12h16M4 18h16"/></svg>;case"shield":return <svg {...common}><path d="M12 3 20 6v5c0 5-3.2 8.6-8 10-4.8-1.4-8-5-8-10V6l8-3Z"/><path d="m9 12 2 2 4-4"/></svg>;case"bolt":return <svg {...common}><path d="m13 2-8 12h7l-1 8 8-12h-7l1-8Z"/></svg>;case"bag":return <svg {...common}><path d="M5 8h14l-1 13H6L5 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg>;case"star":return <svg {...common} fill="currentColor" stroke="none"><path d="m12 2.8 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 2.8Z"/></svg>;case"copy":return <svg {...common}><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>;case"trash":return <svg {...common}><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14M10 11v6M14 11v6"/></svg>;case"plus":return <svg {...common}><path d="M12 5v14M5 12h14"/></svg>;case"minus":return <svg {...common}><path d="M5 12h14"/></svg>;case"close":return <svg {...common}><path d="m6 6 12 12M18 6 6 18"/></svg>;case"sort":return <svg {...common}><path d="M4 6h13M4 12h10M4 18h7"/><path d="m17 15 3 3 3-3" transform="translate(-2 0)"/></svg>;case"check":return <svg {...common}><path d="m5 12 4 4L19 6"/></svg>;case"orders":return <svg {...common}><path d="M6 3h12v18H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>;case"telegram":return <svg {...common}><path d="m3 11 17-7-4 16-5-5-3 3 1-5 7-6-9 5-4-1Z"/></svg>;case"sparkle":return <svg {...common}><path d="M12 2c.8 4.8 3.2 7.2 8 8-4.8.8-7.2 3.2-8 8-.8-4.8-3.2-7.2-8-8 4.8-.8 7.2-3.2 8-8Z"/></svg>;default:return <svg {...common}><circle cx="12" cy="12" r="8"/></svg>}}
+function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
+  const base = { width: size, height: size };
+  const strokeProps = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  const paths = {
+    home: <><path d="m3 10 9-7 9 7" {...strokeProps}/><path d="M5 9v11h14V9M9 20v-6h6v6" {...strokeProps}/></>,
+    grid: <><rect x="4" y="4" width="6" height="6" rx="1.3" {...strokeProps}/><rect x="14" y="4" width="6" height="6" rx="1.3" {...strokeProps}/><rect x="4" y="14" width="6" height="6" rx="1.3" {...strokeProps}/><rect x="14" y="14" width="6" height="6" rx="1.3" {...strokeProps}/></>,
+    search: <><circle cx="11" cy="11" r="6.5" {...strokeProps}/><path d="m16 16 4.2 4.2" {...strokeProps}/></>,
+    user: <><circle cx="12" cy="8" r="4" {...strokeProps}/><path d="M4.5 21c.8-5 3.3-7 7.5-7s6.7 2 7.5 7" {...strokeProps}/></>,
+    cart: <><path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 1.9-1.4L21 8H6" {...strokeProps}/><circle cx="9" cy="20" r="1" fill="currentColor"/><circle cx="18" cy="20" r="1" fill="currentColor"/></>,
+    wallet: <><rect x="3" y="6" width="18" height="14" rx="3" {...strokeProps}/><path d="M3 9h14.5a3.5 3.5 0 0 1 0 7H15a2.5 2.5 0 0 1 0-5h6" {...strokeProps}/></>,
+    headset: <><path d="M4 13v-2a8 8 0 0 1 16 0v2" {...strokeProps}/><path d="M4 13h3v6H5a1 1 0 0 1-1-1v-5Zm16 0h-3v6h2a1 1 0 0 0 1-1v-5ZM17 19c0 1.2-1.7 2-4 2" {...strokeProps}/></>,
+    heart: <path d="M20.8 5.8a5 5 0 0 0-7.1 0L12 7.5l-1.7-1.7a5 5 0 0 0-7.1 7.1L12 21l8.8-8.1a5 5 0 0 0 0-7.1Z" {...strokeProps}/>,
+    chevron: <path d="m9 5 7 7-7 7" {...strokeProps}/>,
+    menu: <path d="M4 7h16M4 12h16M4 17h16" {...strokeProps}/>,
+    shield: <><path d="M12 3 5 6v5c0 4.6 2.8 8.3 7 10 4.2-1.7 7-5.4 7-10V6l-7-3Z" {...strokeProps}/><path d="m9 12 2 2 4-4" {...strokeProps}/></>,
+    bolt: <path d="m13 2-8 12h6l-1 8 9-13h-6l0-7Z" fill="currentColor"/>,
+    copy: <><rect x="8" y="8" width="11" height="11" rx="2" {...strokeProps}/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" {...strokeProps}/></>,
+    trash: <><path d="M5 7h14M9 7V4h6v3M7 7l1 14h8l1-14" {...strokeProps}/></>,
+    plus: <path d="M12 5v14M5 12h14" {...strokeProps}/>,
+    minus: <path d="M5 12h14" {...strokeProps}/>,
+    close: <path d="m6 6 12 12M18 6 6 18" {...strokeProps}/>,
+    check: <path d="m5 12 4 4L19 6" {...strokeProps}/>,
+    orders: <><rect x="5" y="4" width="14" height="17" rx="2" {...strokeProps}/><path d="M9 4.5h6M9 9h6M9 13h6M9 17h4" {...strokeProps}/></>,
+    edit: <><path d="m4 20 4.5-1 10-10a2.2 2.2 0 0 0-3.1-3.1l-10 10L4 20Z" {...strokeProps}/><path d="m13.8 7.5 2.8 2.8" {...strokeProps}/></>,
+    clock: <><circle cx="12" cy="12" r="9" {...strokeProps}/><path d="M12 7v5l3 2" {...strokeProps}/></>,
+  };
+  return <svg viewBox="0 0 24 24" style={base} aria-hidden="true">{paths[name]}</svg>;
+}
