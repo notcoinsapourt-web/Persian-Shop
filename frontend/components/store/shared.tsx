@@ -15,6 +15,18 @@ import {
 } from "lucide-react";
 import { categoryTone } from "./utils";
 
+export type RivaIconName = "home" | "grid" | "user" | "wallet" | "search" | "settings";
+
+export function RivaIcon({ name, size = 22, className = "" }: { name: RivaIconName; size?: number; className?: string }) {
+  const common = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.75, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, className: `riva-icon ${className}`.trim(), "aria-hidden": true };
+  if (name === "user") return <svg {...common}><circle cx="12" cy="7.5" r="3.5"/><path d="M5 21c0-4 3.1-7 7-7s7 3 7 7"/></svg>;
+  if (name === "wallet") return <svg {...common}><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 14h2.5"/></svg>;
+  if (name === "search") return <svg {...common}><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>;
+  if (name === "settings") return <svg {...common}><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="11" cy="18" r="2"/></svg>;
+  if (name === "grid") return <svg {...common}><circle cx="7" cy="7" r="3.1"/><circle cx="17" cy="7" r="3.1"/><circle cx="7" cy="17" r="3.1"/><circle cx="17" cy="17" r="3.1"/></svg>;
+  return <svg {...common}><path d="M4 18a8 8 0 1 1 16 0"/><path d="m12 12 4-3"/><circle cx="12" cy="12" r="1.4"/><path d="M7 16h10"/></svg>;
+}
+
 export function BrandIcon({ id, size = 52 }: { id: string; size?: number }) {
   const tone = categoryTone(id);
   const style = { width: size, height: size, background: tone.soft, color: tone.accent };
@@ -32,7 +44,7 @@ export function BrandIcon({ id, size = 52 }: { id: string; size?: number }) {
     return <span className="brand-icon" style={style}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4v10.2a4.2 4.2 0 1 1-3.2-4.1v2.4a1.9 1.9 0 1 0 1 1.7V4h2.2c.5 2.1 1.8 3.4 4 3.8V10c-1.7-.2-3-.8-4-1.8V4Z" fill="currentColor"/></svg></span>;
   }
   if (id === "ai") {
-    return <span className="brand-icon" style={style}><Sparkles size={Math.round(size * .5)} strokeWidth={1.9}/></span>;
+    return <span className="brand-icon" style={style}><Sparkles size={Math.round(size * .5)} strokeWidth={1.75}/></span>;
   }
   if (id === "digital") {
     return <span className="brand-icon" style={style}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 8 4-4h8l4 4-8 12L4 8Zm4.8-2-2 2h10.4l-2-2H8.8ZM7.4 10 12 17.1 16.6 10H7.4Z" fill="currentColor"/></svg></span>;
@@ -56,7 +68,7 @@ export function EmptyState({ icon = "empty", title, description, action, onActio
   const Icon = icon === "search" ? Search : icon === "support" ? Headphones : PackageSearch;
   return (
     <div className="empty-state">
-      <span className="empty-state-icon"><Icon size={29}/></span>
+      <span className="empty-state-icon"><Icon size={29} strokeWidth={1.75}/></span>
       <h3>{title}</h3>
       {description && <p>{description}</p>}
       {action && onAction && <button className="button button-primary" onClick={onAction}>{action}<ArrowLeft size={16}/></button>}
