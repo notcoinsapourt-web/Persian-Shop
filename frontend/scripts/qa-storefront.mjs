@@ -18,7 +18,6 @@ async function fontSize(page, selector) {
 
 const browser = await chromium.launch({ headless: true });
 try {
-  // MOBILE GUEST QA
   {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
     page.on("pageerror", (error) => report.consoleErrors.push(`mobile pageerror: ${error.message}`));
@@ -60,10 +59,11 @@ try {
     if (await page.locator(".wallet-promo").count()) fail("guest wallet promo should be hidden");
 
     const meResponse = await page.request.get(`${baseUrl}/api/auth/me`);
+    const mePayload = await meResponse.json();
     const walletResponse = await page.request.get(`${baseUrl}/api/wallet`);
     report.auth.guestMeStatus = meResponse.status();
     report.auth.guestWalletStatus = walletResponse.status();
-    if (meResponse.status() !== 401) fail(`guest /api/auth/me expected 401, got ${meResponse.status()}`);
+    if (meResponse.status() !== 200 || mePayload.user !== null) fail(`guest /api/auth/me should return 200 with user:null`);
     if (walletResponse.status() !== 401) fail(`guest /api/wallet expected 401, got ${walletResponse.status()}`);
 
     await page.locator(".mobile-bottom-nav button").filter({ hasText: "حساب من" }).click();
@@ -110,7 +110,6 @@ try {
     await page.close();
   }
 
-  // DESKTOP GUEST QA
   {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
     page.on("pageerror", (error) => report.consoleErrors.push(`desktop pageerror: ${error.message}`));
