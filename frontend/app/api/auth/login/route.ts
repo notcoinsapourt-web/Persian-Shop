@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
     const db = getWebPool();
     const result = await db.query(
-      `SELECT u.id, u.email, u.phone, u.password_hash, u.is_active, w.balance
+      `SELECT u.id, u.email, u.phone, u.created_at, u.password_hash, u.is_active, w.balance
          FROM web_users u JOIN web_wallets w ON w.user_id = u.id
         WHERE u.email = $1 LIMIT 1`,
       [email]
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     await db.query(`UPDATE web_users SET last_login_at = NOW(), updated_at = NOW() WHERE id = $1`, [row.id]);
     const session = await createSession(Number(row.id), request.headers.get("user-agent") || "");
-    const response = NextResponse.json({ user: { id: Number(row.id), email: String(row.email), phone: row.phone ? String(row.phone) : null, balance: Number(row.balance || 0) } });
+    const response = NextResponse.json({ user: { id: Number(row.id), email: String(row.email), phone: row.phone ? String(row.phone) : null, balance: Number(row.balance || 0), createdAt: new Date(row.created_at).toISOString() } });
     setSessionCookie(response, session.token, session.expiresAt);
     return response;
   } catch (error) {
