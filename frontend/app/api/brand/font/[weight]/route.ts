@@ -8,7 +8,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ we
   const { weight } = await context.params;
   const data = weight === "700" ? RIVA_FONT_700 : RIVA_FONT_400;
   const response = new NextResponse(Buffer.from(data, "base64"));
-  response.headers.set("content-type", "font/ttf");
+  response.headers.set("content-type", "font/woff2");
   response.headers.set("cache-control", "public, max-age=31536000, immutable");
   return response;
 }
