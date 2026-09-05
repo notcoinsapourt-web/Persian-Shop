@@ -24,3 +24,16 @@ jobs:
         run: python3 platform/persian-vpn-market-pro/prepare.py /tmp/persian-vpn-market-pro
       - name: Validate overlay applied
         run: php platform/persian-vpn-market-pro/tests/security.php /tmp/persian-vpn-market-pro
+      - name: Install locked upstream dependencies
+        working-directory: /tmp/persian-vpn-market-pro
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Boot isolated Laravel application
+        working-directory: /tmp/persian-vpn-market-pro
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          CACHE_STORE: array
+          SESSION_DRIVER: array
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+        run: php artisan route:list --except-vendor
