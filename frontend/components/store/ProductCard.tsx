@@ -18,19 +18,19 @@ export default function ProductCard({ product, favorite, onFavorite, onOpen, com
     <article className={`product-card ${compact ? "product-card-compact" : ""}`}>
       <div className="product-card-media">
         <button className="product-image-button" onClick={() => onOpen(product)} aria-label={`مشاهده ${product.name}`}>
-          {product.image ? <img src={product.image} alt={product.name} loading="lazy" /> : <div className="product-image-fallback">P</div>}
+          {product.image ? <img src={product.image} alt={product.name} loading="lazy" decoding="async" width={320} height={320} /> : <div className="product-image-fallback">P</div>}
         </button>
-        <span className="product-category-pill">{categoryLabel[product.category] || "محصول دیجیتال"}</span>
-        <button className={`favorite-button ${favorite ? "is-active" : ""}`} onClick={() => onFavorite(product.slug)} aria-label={favorite ? "حذف از علاقه‌مندی" : "افزودن به علاقه‌مندی"}>
+        <button className={`favorite-button ${favorite ? "is-active" : ""}`} onClick={() => onFavorite(product.slug)} aria-pressed={favorite} aria-label={favorite ? "حذف از علاقه‌مندی" : "افزودن به علاقه‌مندی"}>
           <Heart size={18} fill={favorite ? "currentColor" : "none"}/>
         </button>
       </div>
       <div className="product-card-body">
+        <small className="product-category-label">{categoryLabel[product.category] || "محصول دیجیتال"}</small>
         <button className="product-card-title" onClick={() => onOpen(product)}>{product.name}</button>
-        <div className="availability-row"><span className="availability-dot"/>قابل سفارش <span className="availability-separator"/> تحویل دیجیتال</div>
+        
         <div className="product-card-footer">
           <strong>{money(product.price)}</strong>
-          <button className="product-order-button" onClick={() => onOpen(product)} aria-label={`خرید ${product.name}`}><ShoppingBag size={16}/><span>خرید محصول</span></button>
+          <button className="product-order-button" onClick={() => onOpen(product)} aria-label={`خرید ${product.name}`}><ShoppingBag size={16}/><span>خرید</span></button>
         </div>
       </div>
     </article>

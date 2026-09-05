@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node scripts/dev-preview.mjs",
     "build": "next build",
+    "test": "node --test tests/*.test.cjs",
     "start": "next start"
   },
   "dependencies": {

@@ -3,6 +3,7 @@
 import { ArrowLeft, Clock3, Search, Sparkles, X } from "lucide-react";
 import type { StoreCategory, StoreProduct } from "../../lib/store-data";
 import { BrandIcon, EmptyState } from "./shared";
+import { normalizeSearch } from "./catalog-state";
 import { money, shortCategory } from "./utils";
 
 export default function SearchOverlay({
@@ -16,6 +17,7 @@ export default function SearchOverlay({
   onProduct,
   onCategory,
   onRecent,
+  onResults,
 }: {
   open: boolean;
   query: string;
@@ -27,18 +29,19 @@ export default function SearchOverlay({
   onProduct: (product: StoreProduct) => void;
   onCategory: (id: string) => void;
   onRecent: (value: string) => void;
+  onResults: () => void;
 }) {
   if (!open) return null;
-  const normalized = query.trim().toLowerCase();
-  const productMatches = normalized ? products.filter(product => `${product.name} ${product.en} ${product.description}`.toLowerCase().includes(normalized)).slice(0, 6) : [];
-  const categoryMatches = normalized ? categories.filter(category => `${category.name} ${category.en}`.toLowerCase().includes(normalized)).slice(0, 4) : [];
+  const normalized = normalizeSearch(query);
+  const productMatches = normalized ? products.filter(product => normalizeSearch(`${product.name} ${product.en} ${product.description}`).includes(normalized)).slice(0, 6) : [];
+  const categoryMatches = normalized ? categories.filter(category => normalizeSearch(`${category.name} ${category.en}`).includes(normalized)).slice(0, 4) : [];
 
   return (
     <div className="search-overlay-backdrop" onMouseDown={onClose}>
-      <section className="search-overlay" onMouseDown={event => event.stopPropagation()}>
+      <section role="dialog" aria-modal="true" aria-label="جستجوی فروشگاه" className="search-overlay" onMouseDown={event => event.stopPropagation()}>
         <div className="search-overlay-mobile-input">
           <Search size={20}/>
-          <input autoFocus value={query} onChange={event => onQuery(event.target.value)} placeholder="جستجو در محصولات..."/>
+          <input onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); onResults(); } }} aria-label="عبارت جستجو" autoFocus value={query} onChange={event => onQuery(event.target.value)} placeholder="جستجو در محصولات..."/>
           <button onClick={onClose} aria-label="بستن"><X size={20}/></button>
         </div>
 
@@ -59,6 +62,7 @@ export default function SearchOverlay({
             {!!productMatches.length && <div className="search-result-section"><div className="search-overlay-title"><b>محصولات پیشنهادی</b><small>{productMatches.length} نتیجه</small></div><div className="search-product-results">{productMatches.map(product => <button key={product.slug} onClick={() => onProduct(product)}><span className="search-result-thumb">{product.image ? <img src={product.image} alt=""/> : "P"}</span><span className="search-result-copy"><b>{product.name}</b><small>{money(product.price)}</small></span><ArrowLeft size={15}/></button>)}</div></div>}
           </div>
         ) : <EmptyState icon="search" title="نتیجه‌ای پیدا نشد" description="عبارت دیگری امتحان کن یا از دسته‌بندی‌ها وارد شو." action="مشاهده همه دسته‌ها" onAction={() => onCategory("all")}/>} 
+        {!!normalized && !!productMatches.length && <button className="button button-light search-all-results" onClick={onResults}>مشاهده همه نتایج<ArrowLeft size={17}/></button>}
       </section>
     </div>
   );

@@ -9,6 +9,7 @@ type CheckoutLine = {
   productId: number;
   qty: number;
   input: string;
+  expectedUnitPrice: number;
 };
 
 type PreparedLine = CheckoutLine & {
@@ -46,17 +47,18 @@ export async function POST(request: NextRequest) {
     const payload = body && typeof body === "object" ? body as Record<string, unknown> : {};
     const checkoutKey = String(payload.checkoutKey || "").trim();
     const rawLines: unknown[] = Array.isArray(payload.lines) ? payload.lines : [];
-    if (!checkoutKey || rawLines.length < 1 || rawLines.length > 25) return NextResponse.json({ error: "سبد خرید معتبر نیست." }, { status: 400 });
+    if (!checkoutKey || checkoutKey.length > 128 || rawLines.length < 1 || rawLines.length > 25) return NextResponse.json({ error: "سبد خرید معتبر نیست." }, { status: 400 });
 
     const lines: CheckoutLine[] = rawLines.map((raw: unknown) => {
       const line = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
       return {
         productId: Number(line.productId),
-        qty: Math.floor(Number(line.qty)),
+        qty: Number(line.qty),
+        expectedUnitPrice: Number(line.expectedUnitPrice),
         input: String(line.input ?? "").trim(),
       };
     });
-    if (lines.some((line: CheckoutLine) => !Number.isInteger(line.productId) || line.productId <= 0 || !Number.isInteger(line.qty) || line.qty < 1 || line.qty > 10000)) {
+    if (lines.some((line: CheckoutLine) => !Number.isInteger(line.productId) || line.productId <= 0 || !Number.isInteger(line.qty) || line.qty < 1 || line.qty > 10000 || !Number.isFinite(line.expectedUnitPrice) || line.expectedUnitPrice < 0 || !line.input || line.input.length > 4000)) {
       return NextResponse.json({ error: "اطلاعات یکی از محصولات معتبر نیست." }, { status: 400 });
     }
 
@@ -64,6 +66,7 @@ export async function POST(request: NextRequest) {
     const client = await db.connect();
     try {
       await client.query("BEGIN");
+      await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [`web-checkout:${user.id}:${checkoutKey}`]);
       const existingBatch = await client.query(
         `SELECT id FROM web_checkout_batches WHERE checkout_key = $1 AND user_id = $2 LIMIT 1`,
         [checkoutKey, user.id]
@@ -91,12 +94,21 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "یکی از محصولات دیگر قابل سفارش نیست. سبد را تازه‌سازی کنید." }, { status: 409 });
       }
 
+      if (lines.some(line => !Number.isFinite(Number(productMap.get(line.productId)!.price)) || Number(productMap.get(line.productId)!.price) < 0 || Number(productMap.get(line.productId)!.price) !== line.expectedUnitPrice)) {
+        await client.query("ROLLBACK");
+        return NextResponse.json({ error: "قیمت یک محصول تغییر کرده است. مبلغ جدید سبد را بررسی کن و دوباره پرداخت را بزن.", code: "PRICE_CHANGED" }, { status: 409 });
+      }
+
       const prepared: PreparedLine[] = lines.map((line: CheckoutLine) => {
         const product = productMap.get(line.productId)!;
         const unitPrice = Number(product.price);
         return { ...line, name: String(product.name), unitPrice, total: unitPrice * line.qty };
       });
       const total = prepared.reduce((sum: number, line: PreparedLine) => sum + line.total, 0);
+      if (!Number.isSafeInteger(total) || total < 0) {
+        await client.query("ROLLBACK");
+        return NextResponse.json({ error: "مبلغ سبد خرید معتبر نیست." }, { status: 400 });
+      }
       const wallet = await client.query(`SELECT id, balance FROM web_wallets WHERE user_id = $1 FOR UPDATE`, [user.id]);
       if (!wallet.rowCount) {
         await client.query("ROLLBACK");
@@ -141,6 +153,6 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error("web checkout failed", error);
-    return NextResponse.json({ error: "ثبت سفارش انجام نشد. مبلغی از کیف پول کم نشده است." }, { status: 500 });
+    return NextResponse.json({ error: "وضعیت ثبت سفارش مشخص نشد. دوباره تلاش کنید یا سفارش‌ها را در حساب بررسی کنید." }, { status: 500 });
   }
 }

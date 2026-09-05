@@ -4,6 +4,7 @@ export type CartLine = {
   product: StoreProduct;
   qty: number;
   input: string;
+  unavailable?: boolean;
 };
 
 export type WalletMethod = "card" | "crypto";

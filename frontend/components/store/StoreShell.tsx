@@ -1,13 +1,16 @@
 "use client";
 
 import { ArrowUp, Check, Headphones, ShieldCheck, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { StoreData, StoreProduct } from "../../lib/store-data";
 import type { WebSessionUser } from "../../lib/web-auth";
 import AccountPanel from "./AccountPanel";
 import CartDrawer from "./CartDrawer";
 import CatalogPanel from "./CatalogPanel";
 import Header from "./Header";
+import SideNav from "./SideNav";
+import { restoreCart, restoreStrings, syncCart } from "./catalog-state";
+import { useOverlayFocus } from "./useOverlayFocus";
 import HomeView from "./HomeView";
 import MobileNav from "./MobileNav";
 import ProductCard from "./ProductCard";
@@ -38,6 +41,29 @@ export default function StoreShell({ data }: { data: StoreData }) {
   const [user, setUser] = useState<WebSessionUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState(false);
+  const [storageReady, setStorageReady] = useState(false);
+  const [catalogError, setCatalogError] = useState(false);
+  const checkoutAttempt = useRef<{ signature: string; key: string } | null>(null);
+  const catalogRequest = useRef<AbortController | null>(null);
+  useOverlayFocus(supportOpen ? "support" : walletOpen ? "wallet" : accountOpen ? "account" : cartOpen ? "cart" : selected ? "product" : catalogOpen ? "catalog" : searchOpen ? "search" : "");
+
+  const refreshCatalog = useCallback(async () => {
+    if (catalogRequest.current) return;
+    const controller = new AbortController();
+    catalogRequest.current = controller;
+    try {
+      const response = await fetch("/api/store/catalog", { cache: "no-store", signal: controller.signal });
+      if (!response.ok) throw new Error("Catalog unavailable");
+      const next = await response.json() as StoreData;
+      if (!Array.isArray(next.products) || !Array.isArray(next.categories) || !next.settings) throw new Error("Invalid catalog");
+      setStoreData(next);
+      setCatalogError(false);
+    } catch {
+      if (!controller.signal.aborted) setCatalogError(true);
+    } finally {
+      if (catalogRequest.current === controller) catalogRequest.current = null;
+    }
+  }, []);
 
   const refreshAuth = async () => {
     try {
@@ -60,60 +86,39 @@ export default function StoreShell({ data }: { data: StoreData }) {
       const savedFavorites = localStorage.getItem("persian-shop-favs-v4");
       const savedViewed = localStorage.getItem("persian-shop-viewed-v4");
       const savedSearches = localStorage.getItem("persian-shop-searches-v4");
-      if (savedCart) setCart(JSON.parse(savedCart));
-      if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
-      if (savedViewed) setRecentlyViewed(JSON.parse(savedViewed));
-      if (savedSearches) setRecentSearches(JSON.parse(savedSearches));
+      if (savedCart) setCart(restoreCart(JSON.parse(savedCart), data.products));
+      if (savedFavorites) setFavorites(restoreStrings(JSON.parse(savedFavorites)));
+      if (savedViewed) setRecentlyViewed(restoreStrings(JSON.parse(savedViewed)));
+      if (savedSearches) setRecentSearches(restoreStrings(JSON.parse(savedSearches)));
     } catch {}
+    setStorageReady(true);
     void refreshAuth();
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    const refreshCatalog = async () => {
-      if (document.visibilityState === "hidden") return;
-      try {
-        const response = await fetch("/api/store/catalog", { cache: "no-store" });
-        if (!response.ok) return;
-        const next = await response.json() as StoreData;
-        if (!cancelled && Array.isArray(next.products) && Array.isArray(next.categories)) {
-          setStoreData(next);
-        }
-      } catch {}
-    };
-    const refreshWhenVisible = () => {
-      if (document.visibilityState === "visible") void refreshCatalog();
-    };
-    const timer = window.setInterval(() => void refreshCatalog(), 60_000);
-    window.addEventListener("focus", refreshCatalog);
+    const refreshWhenVisible = () => { if (document.visibilityState !== "hidden") void refreshCatalog(); };
+    const timer = window.setInterval(refreshWhenVisible, 60_000);
+    window.addEventListener("focus", refreshWhenVisible);
     document.addEventListener("visibilitychange", refreshWhenVisible);
+    refreshWhenVisible();
     return () => {
-      cancelled = true;
+      catalogRequest.current?.abort();
+      catalogRequest.current = null;
       window.clearInterval(timer);
-      window.removeEventListener("focus", refreshCatalog);
+      window.removeEventListener("focus", refreshWhenVisible);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
-  }, []);
+  }, [refreshCatalog]);
 
   useEffect(() => {
-    const latestById = new Map(products.map(product => [String(product.id), product]));
-    setCart(current => {
-      let changed = false;
-      const synchronized = current.map(line => {
-        const latest = latestById.get(String(line.product.id));
-        if (!latest || (latest.price === line.product.price && latest.name === line.product.name && latest.image === line.product.image)) return line;
-        changed = true;
-        return { ...line, product: latest };
-      });
-      return changed ? synchronized : current;
-    });
-    setSelected(current => current ? products.find(product => String(product.id) === String(current.id)) || current : null);
+    setCart(current => syncCart(current, products));
+    setSelected(current => current ? products.find(product => String(product.id) === String(current.id)) || null : null);
   }, [products]);
 
-  useEffect(() => { try { localStorage.setItem("persian-shop-cart-v4", JSON.stringify(cart)); } catch {} }, [cart]);
-  useEffect(() => { try { localStorage.setItem("persian-shop-favs-v4", JSON.stringify(favorites)); } catch {} }, [favorites]);
-  useEffect(() => { try { localStorage.setItem("persian-shop-viewed-v4", JSON.stringify(recentlyViewed)); } catch {} }, [recentlyViewed]);
-  useEffect(() => { try { localStorage.setItem("persian-shop-searches-v4", JSON.stringify(recentSearches)); } catch {} }, [recentSearches]);
+  useEffect(() => { if (!storageReady) return; try { localStorage.setItem("persian-shop-cart-v4", JSON.stringify(cart)); } catch {} }, [cart, storageReady]);
+  useEffect(() => { if (!storageReady) return; try { localStorage.setItem("persian-shop-favs-v4", JSON.stringify(favorites)); } catch {} }, [favorites, storageReady]);
+  useEffect(() => { if (!storageReady) return; try { localStorage.setItem("persian-shop-viewed-v4", JSON.stringify(recentlyViewed)); } catch {} }, [recentlyViewed, storageReady]);
+  useEffect(() => { if (!storageReady) return; try { localStorage.setItem("persian-shop-searches-v4", JSON.stringify(recentSearches)); } catch {} }, [recentSearches, storageReady]);
 
   useEffect(() => {
     const anyOverlay = searchOpen || catalogOpen || selected || cartOpen || accountOpen || walletOpen || supportOpen;
@@ -156,7 +161,8 @@ export default function StoreShell({ data }: { data: StoreData }) {
     setRecentlyViewed(current => [product.slug, ...current.filter(slug => slug !== product.slug)].slice(0, 6));
   };
 
-  const openCatalog = (id = "all") => {
+  const openCatalog = (id = "all", preserveSearch = false) => {
+    if (!preserveSearch) setQuery("");
     setCategory(id);
     setCatalogOpen(true);
     setSearchOpen(false);
@@ -181,7 +187,7 @@ export default function StoreShell({ data }: { data: StoreData }) {
     setCart(current => {
       const existingIndex = current.findIndex(line => line.product.slug === product.slug && line.input === input);
       if (existingIndex < 0) return [...current, { product, qty, input }];
-      return current.map((line, index) => index === existingIndex ? { ...line, qty: line.qty + qty } : line);
+      return current.map((line, index) => index === existingIndex ? { ...line, qty: Math.min(10000, line.qty + qty) } : line);
     });
     setSelected(null);
     notify("محصول به سبد خرید اضافه شد");
@@ -192,7 +198,7 @@ export default function StoreShell({ data }: { data: StoreData }) {
   };
 
   const changeCartQty = (index: number, delta: number) => {
-    setCart(current => current.flatMap((line, currentIndex) => currentIndex === index ? (line.qty + delta > 0 ? [{ ...line, qty: line.qty + delta }] : []) : [line]));
+    setCart(current => current.flatMap((line, currentIndex) => currentIndex === index ? (line.qty + delta > 0 ? [{ ...line, qty: Math.min(10000, line.qty + delta) }] : []) : [line]));
   };
 
   const checkout = async () => {
@@ -201,23 +207,30 @@ export default function StoreShell({ data }: { data: StoreData }) {
       setAccountOpen(true);
       return;
     }
-    if (!cart.length || checkingOut) return;
+    if (!cart.length || checkingOut || catalogError || cart.some(line => line.unavailable)) return;
     setCheckingOut(true);
-    const checkoutKey = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+    const signature = JSON.stringify({ userId: user.id, cart: cart.map(line => [line.product.id, line.product.price, line.qty, line.input]) });
+    if (checkoutAttempt.current?.signature !== signature) checkoutAttempt.current = { signature, key: crypto.randomUUID() };
+    const checkoutKey = checkoutAttempt.current.key;
     try {
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ checkoutKey, lines: cart.map(line => ({ productId: Number(line.product.id), qty: line.qty, input: line.input })) }),
+        body: JSON.stringify({ checkoutKey, lines: cart.map(line => ({ productId: Number(line.product.id), qty: line.qty, input: line.input, expectedUnitPrice: line.product.price })) }),
       });
       const payload = await response.json();
       if (!response.ok) {
+        if (response.status === 409) {
+          checkoutAttempt.current = null;
+          await refreshCatalog();
+        }
         if (payload.code === "INSUFFICIENT_BALANCE") {
           setCartOpen(false);
           setWalletOpen(true);
         }
         throw new Error(payload.error || "ثبت سفارش انجام نشد.");
       }
+      checkoutAttempt.current = null;
       setCart([]);
       setCartOpen(false);
       await refreshAuth();
@@ -237,21 +250,19 @@ export default function StoreShell({ data }: { data: StoreData }) {
   };
 
   return (
-    <main className="store-shell">
-      <Header shopName={settings.shopName} categories={categories} query={query} cartCount={cartCount} searchFocused={searchOpen} isLoggedIn={Boolean(user)} accountLabel={user ? "حساب من" : "ورود | ثبت‌نام"} onQuery={setQuery} onSearchFocus={setSearchOpen} onSearchSubmit={() => { saveSearch(); openCatalog("all"); }} onOpenCategory={openCatalog} onOpenCatalog={() => openCatalog("all")} onOpenAccount={() => setAccountOpen(true)} onOpenCart={() => setCartOpen(true)} onOpenWallet={openWallet} onSupport={openSupport}/>
+    <div className="store-shell minimal-store">
+      <a className="shop-skip-link" href="#store-content">رفتن به محتوای فروشگاه</a>
+      <Header shopName={settings.shopName} query={query} cartCount={cartCount} searchFocused={searchOpen} accountLabel={user ? "حساب من" : "ورود | ثبت‌نام"} onQuery={setQuery} onSearchFocus={setSearchOpen} onSearchSubmit={() => { saveSearch(); openCatalog("all", true); }} onHome={home} onOpenAccount={() => setAccountOpen(true)} onOpenCart={() => setCartOpen(true)} onFavorites={() => openCatalog("favorites")}/>
+      <SideNav active={catalogOpen ? category === "favorites" ? "favorites" : "catalog" : walletOpen ? "wallet" : accountOpen ? "account" : "home"} onHome={home} onCatalog={() => openCatalog("all")} onFavorites={() => openCatalog("favorites")} onAccount={() => setAccountOpen(true)} onWallet={openWallet} onSupport={openSupport}/>
+      <main className="shop-surface">
 
-      <SearchOverlay open={searchOpen} query={query} products={products} categories={categories} recentSearches={recentSearches} onClose={() => setSearchOpen(false)} onQuery={setQuery} onProduct={product => { saveSearch(); openProduct(product); }} onCategory={id => { saveSearch(); openCatalog(id); }} onRecent={value => { setQuery(value); saveSearch(value); }}/>
+
 
       <HomeView categories={categories} products={products} favorites={favorites} isLoggedIn={Boolean(user)} onFavorite={toggleFavorite} onProduct={openProduct} onCategory={openCatalog} onCatalog={() => openCatalog("all")} onWallet={openWallet} onAccount={() => setAccountOpen(true)} onSupport={openSupport}/>
 
-      {!!recentProducts.length && <section className="page-container recently-viewed-section"><SectionHeading title="بازدیدهای اخیر" subtitle="محصولاتی که اخیراً بررسی کرده‌اید؛ فقط روی همین دستگاه ذخیره می‌شود."/><div className="product-grid recently-viewed-grid">{recentProducts.map(product => <ProductCard key={product.slug} product={product} favorite={favorites.includes(product.slug)} onFavorite={toggleFavorite} onOpen={openProduct}/>)}</div></section>}
+      {!!recentProducts.length && <section className="page-container recently-viewed-section"><SectionHeading title="بازدیدهای اخیر" /><div className="product-grid shop-product-grid recently-viewed-grid">{recentProducts.map(product => <ProductCard key={product.slug} product={product} favorite={favorites.includes(product.slug)} onFavorite={toggleFavorite} onOpen={openProduct}/>)}</div></section>}
 
       <footer className="site-footer">
-        <div className="page-container footer-trust-strip">
-          <span><ShieldCheck size={21}/><span><b>اطلاعات سفارش محفوظ</b><small>فقط اطلاعات لازم برای اجرای سرویس دریافت می‌شود</small></span></span>
-          <span><Check size={21}/><span><b>قیمت نهایی شفاف</b><small>مبلغ هر محصول پیش از سفارش مشخص است</small></span></span>
-          <span><Headphones size={21}/><span><b>پشتیبانی در دسترس</b><small>برای پرداخت و پیگیری سفارش همراهت هستیم</small></span></span>
-        </div>
         <div className="page-container footer-grid">
           <div className="footer-brand"><div className="footer-brand-lockup"><span className="brand-logo-image"><img src="/api/brand/logo?brand=exact-user-v4" alt={`لوگوی ${settings.shopName}`}/></span><span><b>{settings.shopName}</b><small>فروشگاه خدمات دیجیتال</small></span></div><p>خرید خدمات شبکه‌های اجتماعی، ابزارهای هوش مصنوعی و اشتراک‌های دیجیتال با قیمت مشخص و امکان پیگیری سفارش.</p><button className="footer-support-pill" onClick={openSupport}><Headphones size={17}/>پشتیبانی: {settings.supportUsername || "@Znoxe_shope"}</button></div>
           <div><b>فروشگاه</b><button onClick={() => openCatalog("all")}>همه محصولات</button><button onClick={() => setCartOpen(true)}>سبد خرید</button>{user && <button onClick={openWallet}>کیف پول</button>}</div>
@@ -260,16 +271,18 @@ export default function StoreShell({ data }: { data: StoreData }) {
         </div>
         <div className="page-container footer-bottom"><span>© 2026 Persian Shop — تمامی حقوق محفوظ است.</span><button onClick={home}>بازگشت به بالا<ArrowUp size={16}/></button></div>
       </footer>
+      </main>
+      <SearchOverlay open={searchOpen} query={query} products={products} categories={categories} recentSearches={recentSearches} onClose={() => setSearchOpen(false)} onQuery={setQuery} onProduct={product => { saveSearch(); openProduct(product); }} onCategory={id => { saveSearch(); openCatalog(id); }} onRecent={value => { setQuery(value); saveSearch(value); }} onResults={() => { saveSearch(); openCatalog("all", true); }}/>
 
-      <CatalogPanel open={catalogOpen} categories={categories} products={products} category={category} query={query} sort={sort} favorites={favorites} onClose={() => setCatalogOpen(false)} onCategory={setCategory} onQuery={setQuery} onSort={setSort} onFavorite={toggleFavorite} onProduct={openProduct}/>
+      <CatalogPanel open={catalogOpen} categories={categories} products={products} category={category} query={query} sort={sort} favorites={favorites} onClose={() => setCatalogOpen(false)} onCategory={id => { setCategory(id); setQuery(""); }} onQuery={setQuery} onSort={setSort} onFavorite={toggleFavorite} onProduct={openProduct}/>
       <ProductSheet product={selected} categories={categories} favorite={selected ? favorites.includes(selected.slug) : false} onClose={() => setSelected(null)} onFavorite={toggleFavorite} onAdd={addToCart}/>
-      <CartDrawer open={cartOpen} cart={cart} isLoggedIn={Boolean(user)} walletBalance={user?.balance || 0} checkingOut={checkingOut} onClose={() => setCartOpen(false)} onQty={changeCartQty} onRemove={index => setCart(current => current.filter((_, currentIndex) => currentIndex !== index))} onCatalog={() => openCatalog("all")} onLogin={() => { setCartOpen(false); setAccountOpen(true); }} onWallet={() => { setCartOpen(false); openWallet(); }} onCheckout={checkout}/>
+      <CartDrawer catalogError={catalogError} onRefresh={() => void refreshCatalog()} open={cartOpen} cart={cart} isLoggedIn={Boolean(user)} walletBalance={user?.balance || 0} checkingOut={checkingOut} onClose={() => setCartOpen(false)} onQty={changeCartQty} onRemove={index => setCart(current => current.filter((_, currentIndex) => currentIndex !== index))} onCatalog={() => openCatalog("all")} onLogin={() => { setCartOpen(false); setAccountOpen(true); }} onWallet={() => { setCartOpen(false); openWallet(); }} onCheckout={checkout}/>
       <AccountPanel open={accountOpen} user={user} authLoading={authLoading} cartCount={cartCount} favoriteCount={favorites.length} onClose={() => setAccountOpen(false)} onCart={() => { setAccountOpen(false); setCartOpen(true); }} onCatalog={() => { setAccountOpen(false); openCatalog("all"); }} onWallet={() => { setAccountOpen(false); openWallet(); }} onSupport={openSupport} onAuthenticated={authenticated => { setUser(authenticated); notify("ورود با موفقیت انجام شد"); }} onLoggedOut={() => { setUser(null); setWalletOpen(false); notify("از حساب خارج شدید"); }}/>
       {user && <WalletPanel open={walletOpen} balance={user.balance} settings={settings} onClose={() => setWalletOpen(false)} onNotify={notify} onSubmitted={() => notify("رسید برای بررسی مدیریت ثبت شد")}/>} 
       <MobileNav cartCount={cartCount} isLoggedIn={Boolean(user)} onHome={home} onCatalog={() => openCatalog("all")} onCart={() => setCartOpen(true)} onWallet={openWallet} onSupport={openSupport} onAccount={() => setAccountOpen(true)}/>
 
-      {supportOpen && <div className="modal-backdrop" onMouseDown={() => setSupportOpen(false)}><section className="support-dialog" onMouseDown={event => event.stopPropagation()}><button className="sheet-close" onClick={() => setSupportOpen(false)} aria-label="بستن"><X size={21}/></button><img className="account-brand-logo" src="/api/brand/logo?brand=exact-user-v4" alt="Persian Shop"/><h2>پشتیبانی Persian Shop</h2><p>برای پیگیری سفارش، پرداخت یا حساب کاربری از پشتیبانی فروشگاه کمک بگیرید.</p><button className="button button-primary" onClick={() => setSupportOpen(false)}>بستن</button></section></div>}
-      {toast && <div className="store-toast"><Check size={17}/>{toast}</div>}
-    </main>
+      {supportOpen && <div className="modal-backdrop" onMouseDown={() => setSupportOpen(false)}><section role="dialog" aria-modal="true" aria-label="پشتیبانی" className="support-dialog" onMouseDown={event => event.stopPropagation()}><button className="sheet-close" onClick={() => setSupportOpen(false)} aria-label="بستن"><X size={21}/></button><img className="account-brand-logo" src="/api/brand/logo?brand=exact-user-v4" alt="Persian Shop"/><h2>پشتیبانی Persian Shop</h2><p>برای پیگیری سفارش، پرداخت یا حساب کاربری از پشتیبانی فروشگاه کمک بگیرید.</p><button className="button button-primary" onClick={() => setSupportOpen(false)}>بستن</button></section></div>}
+      {toast && <div role="status" className="store-toast"><Check size={17}/>{toast}</div>}
+    </div>
   );
 }

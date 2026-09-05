@@ -1,6 +1,5 @@
-import { Pool } from "pg";
 import { categories as fallbackCategories, products as fallbackProducts } from "../data/catalog";
-import { ensureWebSchema } from "./web-db";
+import { ensureWebSchema, getWebPool } from "./web-db";
 
 export type StoreCategory={id:string;dbId?:number;name:string;en:string;emoji:string;description:string;count:number};
 export type StoreProduct={id:number|string;slug:string;category:string;name:string;en:string;description:string;price:number;image:string;emoji:string;inputPrompt:string};
@@ -33,9 +32,12 @@ function fallback():StoreData{
 }
 
 export async function getStoreData():Promise<StoreData>{
- if(!process.env.DATABASE_URL)return fallback();
+ if(!process.env.DATABASE_URL){
+  if(process.env.NODE_ENV === "production")throw new Error("Store database is not configured");
+  return fallback();
+ }
  await ensureWebSchema();
- const pool=new Pool({connectionString:process.env.DATABASE_URL,max:3});
+ const pool=getWebPool();
  try{
   const [catalog,settingsResult]=await Promise.all([
    pool.query(`SELECT p.id,p.name,p.description,p.price,p.photo_file_id,p.emoji,p.input_prompt,p.sort_order,c.id AS category_id,c.name AS category_name,c.description AS category_description,c.emoji AS category_emoji,c.sort_order AS category_sort FROM products p JOIN categories c ON c.id=p.category_id WHERE p.is_active=true AND c.is_active=true ORDER BY c.sort_order,p.sort_order,p.id`),
@@ -61,5 +63,5 @@ export async function getStoreData():Promise<StoreData>{
   const categoryMap=new Map<string,StoreCategory>();
   for(const row of catalog.rows){const id=categorySlug[String(row.category_name)]||`category-${row.category_id}`;if(!categoryMap.has(id))categoryMap.set(id,{id,dbId:Number(row.category_id),name:cleanWebText(row.category_name),en:categoryEn[String(row.category_name)]||cleanWebText(row.category_name),emoji:String(row.category_emoji||"🛍️"),description:cleanWebText(row.category_description),count:0});categoryMap.get(id)!.count++;}
   return {categories:[...categoryMap.values()],products,settings};
- }catch(error){console.error("store database unavailable",error);return fallback();}finally{await pool.end();}
+ }catch(error){console.error("store database unavailable",error);throw error;}
 }

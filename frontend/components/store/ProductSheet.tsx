@@ -21,10 +21,8 @@ export default function ProductSheet({ product, categories, favorite, onClose, o
     if (product) {
       setQty(1);
       setInput("");
-      document.body.classList.add("overlay-open");
-    } else document.body.classList.remove("overlay-open");
-    return () => document.body.classList.remove("overlay-open");
-  }, [product]);
+    }
+  }, [product?.id]);
 
   if (!product) return null;
   const category = categories.find(item => item.id === product.category);
@@ -64,7 +62,7 @@ export default function ProductSheet({ product, categories, favorite, onClose, o
 
           <label className="order-input-block">
             <span><b>اطلاعات موردنیاز سفارش</b><small>{product.inputPrompt}</small></span>
-            <textarea required value={input} onChange={event => setInput(event.target.value)} placeholder="اطلاعات خواسته‌شده را وارد کنید..."/>
+            <textarea required maxLength={4000} value={input} onChange={event => setInput(event.target.value)} placeholder="اطلاعات خواسته‌شده را وارد کنید..."/>
           </label>
 
           <div className="product-note"><ShieldCheck size={20}/><p>فقط اطلاعاتی را وارد کن که برای اجرای سرویس لازم است. رمز عبور یا اطلاعات حساس را ارسال نکن.</p></div>
@@ -75,7 +73,7 @@ export default function ProductSheet({ product, categories, favorite, onClose, o
           </section>
 
           <div className="product-sheet-buybar">
-            <div className="qty-control"><button type="button" onClick={() => setQty(Math.max(1, qty - 1))} aria-label="کاهش تعداد"><Minus size={17}/></button><b>{qty}</b><button type="button" onClick={() => setQty(qty + 1)} aria-label="افزایش تعداد"><Plus size={17}/></button></div>
+            <div className="qty-control"><button type="button" onClick={() => setQty(Math.max(1, qty - 1))} aria-label="کاهش تعداد"><Minus size={17}/></button><b>{qty}</b><button type="button" onClick={() => setQty(Math.min(10000, qty + 1))} aria-label="افزایش تعداد"><Plus size={17}/></button></div>
             <div className="buy-total"><small>مبلغ نهایی</small><strong>{money(product.price * qty)}</strong></div>
             <button className="button button-primary add-to-cart-button" type="submit"><ShoppingBag size={18}/>افزودن به سبد</button>
           </div>
