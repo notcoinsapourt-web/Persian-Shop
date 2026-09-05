@@ -1,0 +1,26 @@
+name: Persian VPN Market Pro foundation
+on:
+  push:
+    branches: [feature/persian-vpn-market-pro]
+    paths: ['platform/persian-vpn-market-pro/**', '.github/workflows/persian-vpn-market-pro.yml']
+  pull_request:
+    paths: ['platform/persian-vpn-market-pro/**', '.github/workflows/persian-vpn-market-pro.yml']
+permissions:
+  contents: read
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - name: Verify PHP syntax
+        run: find platform/persian-vpn-market-pro -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Security regression checks
+        run: php platform/persian-vpn-market-pro/tests/security.php platform/persian-vpn-market-pro/overlay
+      - name: Prepare exact reviewed upstream
+        run: python3 platform/persian-vpn-market-pro/prepare.py /tmp/persian-vpn-market-pro
+      - name: Validate overlay applied
+        run: php platform/persian-vpn-market-pro/tests/security.php /tmp/persian-vpn-market-pro
