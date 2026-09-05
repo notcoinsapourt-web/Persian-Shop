@@ -6,6 +6,7 @@ require $argv[1].'/app/Security/TelegramInitData.php';
 require $argv[1].'/app/Domain/Vpn/PanelAdapter.php';
 require $argv[1].'/app/Domain/Vpn/ServiceSnapshot.php';
 require $argv[1].'/app/Domain/Vpn/PanelRegistry.php';
+require $argv[1].'/app/Security/AdminPermissions.php';
 
 use App\Security\TelegramInitData;
 use App\Domain\Vpn\PanelRegistry;
@@ -66,3 +67,13 @@ try { $registry->register('test', fn () => null); }
 catch (LogicException) { $rejected = true; }
 check($rejected, 'duplicate adapter rejected');
 echo "$count security and registry checks passed\n";
+$permissions = new \App\Security\AdminPermissions;
+check($permissions->allows('100', '100', null, 'admins.manage'), 'owner can manage admins');
+check(!$permissions->allows('', '', null, 'admins.manage'), 'missing owner fails closed');
+check(!$permissions->allows('100', '200', 'admin', 'admins.manage'), 'admin cannot elevate privileges');
+check(!$permissions->allows('100', '200', 'owner', 'admins.manage'), 'stored owner role cannot forge owner');
+check($permissions->allows('100', '200', 'finance', 'payments.review'), 'finance can review payments');
+check(!$permissions->allows('100', '200', 'support', 'payments.review'), 'support cannot review payments');
+check(!$permissions->allows('100', '200', null, 'tickets.manage'), 'revoked admin loses access');
+check($permissions->allows('100', '200', 'support', 'tickets.manage'), 'support can manage tickets');
+echo "$count total checks passed\n";

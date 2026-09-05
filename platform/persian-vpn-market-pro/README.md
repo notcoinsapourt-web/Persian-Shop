@@ -26,6 +26,7 @@ PHP 8.3+ is required by the reviewed composer manifest. Use the upstream lock fi
 - Panel adapter contract, normalized service snapshot, and extensible registry. No panel is falsely advertised as integrated or tested.
 - Webhook-secret middleware prepared for the future bot endpoint; not yet wired to an enabled bot route.
 - Environment-based custom emoji IDs; no invented IDs or tokens.
+- Owner-only administrator management API (list, grant/change role, revoke), database-backed memberships and transactionally recorded audit events. Owner identity comes from `MARKET_OWNER_TELEGRAM_ID`; other admins cannot grant roles or remove the owner. Roles are admin, finance and support. The management UI and integration of permissions into financial/catalog actions remain pending.
 - A restrictive development route/provider configuration while the upstream financial and admin paths are audited.
 - Executable security regression checks and isolated CI workflow.
 
@@ -41,4 +42,4 @@ Use a new Railway project named `Persian VPN Market Pro`, a separate database an
 
 Required future secrets: a dedicated bot token, webhook secret, Laravel APP_KEY, separate database credentials, and test-panel credentials. Enter them in the new environment's secret settings, never commit them. The bot token in upstream Settings must match the Mini App validation token.
 
-No deployment is performed by this foundation. A full Laravel boot/migration test and payment/provisioning acceptance tests remain required.
+An independent Railway project and an empty `market-core` service have now been created. The user-provided bot token and owner ID are stored only in service variables, with deployments skipped and `MARKET_BOT_ENABLED=false`. No source, domain, webhook or running bot is attached. Locked dependency installation and Laravel route bootstrap passed in CI; a full upstream migration test and payment/provisioning acceptance tests remain required.

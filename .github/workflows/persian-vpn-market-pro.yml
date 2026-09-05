@@ -37,3 +37,5 @@ jobs:
           DB_CONNECTION: sqlite
           DB_DATABASE: ':memory:'
         run: php artisan route:list --except-vendor
+      - name: Verify administrator HTTP authorization and audit
+        run: php platform/persian-vpn-market-pro/tests/admin-http.php /tmp/persian-vpn-market-pro
